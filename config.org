@@ -551,6 +551,10 @@ the swag
 (require 'org-src)
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
 #+end_src
+
+#+RESULTS:
+| latex | (:inherit default :extend t) |
+
 *** Hooks
 #+begin_src emacs-lisp
 (defun nicer-org ()
@@ -776,6 +780,10 @@ we want them bigger than text
 #+begin_src emacs-lisp
 (setq org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
 #+end_src
+
+#+RESULTS:
+: ((+ . -) (- . +) (* . +) (1. . a.))
+
 *** Org-Appear
 #+begin_src emacs-lisp
 (use-package org-appear
@@ -789,6 +797,10 @@ we want them bigger than text
   (run-at-time nil nil #'org-appear--set-elements))
 (setq org-appear-mode t)
 #+end_src
+
+#+RESULTS:
+: t
+
 *** Org-Ol-Tree (broken I think)
 #+begin_src emacs-lisp
 (use-package org-ol-tree
@@ -805,6 +817,9 @@ we want them bigger than text
       :localleader
       :desc "Outline" "O" #'org-ol-tree)
 #+end_src
+
+#+RESULTS:
+
 ** Babel
 *** Default Header Args
 #+begin_src emacs-lisp
@@ -819,6 +834,10 @@ we want them bigger than text
         (:comments . "link")))
 
 #+END_SRC
+
+#+RESULTS:
+: ((:session . none) (:results . replace) (:exports . code) (:cache . no) (:noweb . no) (:hlines . no) (:tangle . no) (:comments . link))
+
 *** Load Languages:
 #+begin_src emacs-lisp
 (org-babel-do-load-languages
