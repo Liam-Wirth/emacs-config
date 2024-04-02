@@ -122,6 +122,15 @@
   :pin "207c748aa5fea8626be619e8c55bdb1c16118c25")
 ;;(package! org-chef)
 ;;(package! org-graph-view)
+;;
+(package! aas :recipe (:host github :repo "ymarco/auto-activating-snippets")
+  :pin "ddc2b7a58a2234477006af348b30e970f73bc2c1")
+(package! info-colors :pin "2e237c301ba62f0e0286a27c1abe48c4c8441143")
+(package! doct
+  :recipe (:host github :repo "progfolio/doct")
+  :pin "5cab660dab653ad88c07b0493360252f6ed1d898")
 (provide 'packages)
+
+
 
 ;;; packages.el ends here

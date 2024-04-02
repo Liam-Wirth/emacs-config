@@ -147,6 +147,7 @@
 (after! doom-modeline
   (setq doom-modeline-enable-word-count t)
   (setq doom-modeline-icon t)
+  (setq doom-modeline-height 45)
   (setq doom-modeline-lsp-icon t)
   (setq doom-modeline-total-line-number t)
   (setq doom-modeline-lsp t)
@@ -155,6 +156,7 @@
   (setq doom-modeline-battery t)
   (setq doom-modeline-time t)
   (setq doom-modeline-env-version t)
+  (setq doom-modeline-time-clock-size 0.65)
   ;;(setq      doom-modeline-hud nil)
   (setq      doom-themes-padded-modeline t)
   (add-hook! 'doom-modeline-mode-hook
@@ -261,6 +263,9 @@
         centaur-tabs-gray-out-icons 'buffer)
   )
 
+(use-package! info-colors
+:commands (info-colors-fontify-node))
+
 (after! which-key
   (setq which-key-idle-delay 0.2))
 
@@ -354,6 +359,96 @@
 (defvar calc-embedded-trail-window nil)
 (defvar calc-embedded-calculator-window nil)
 
+(defface variable-pitch-serif
+    '((t (:family "serif")))
+    "A variable-pitch face with serifs."
+    :group 'basic-faces)
+
+(defcustom variable-pitch-serif-font (font-spec :family "serif")
+  "The font face used for `variable-pitch-serif'."
+  :group 'basic-faces
+  :type '(restricted-sexp :tag "font-spec" :match-alternatives (fontp))
+  :set (lambda (symbol value)
+         (set-face-attribute 'variable-pitch-serif nil :font value)
+         (set-default-toplevel-value symbol value)))
+
+(defvar mixed-pitch-modes '(org-mode LaTeX-mode markdown-mode gfm-mode Info-mode)
+  "Modes that `mixed-pitch-mode' should be enabled in, but only after UI initialisation.")
+(defun init-mixed-pitch-h ()
+  "Hook `mixed-pitch-mode' into each mode in `mixed-pitch-modes'.
+Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
+  (when (memq major-mode mixed-pitch-modes)
+    (mixed-pitch-mode 1))
+  (dolist (hook mixed-pitch-modes)
+    (add-hook (intern (concat (symbol-name hook) "-hook")) #'mixed-pitch-mode)))
+(add-hook 'doom-init-ui-hook #'init-mixed-pitch-h)
+
+(autoload #'mixed-pitch-serif-mode "mixed-pitch"
+  "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch." t)
+
+(setq! variable-pitch-serif-font (font-spec :family "Alegreya" :size 27))
+
+(after! mixed-pitch
+  (setq mixed-pitch-set-height t)
+  (set-face-attribute 'variable-pitch-serif nil :font variable-pitch-serif-font)
+  (defun mixed-pitch-serif-mode (&optional arg)
+    "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch."
+    (interactive)
+    (let ((mixed-pitch-face 'variable-pitch-serif))
+      (mixed-pitch-mode (or arg 'toggle)))))
+
+(set-char-table-range composition-function-table ?f '(["\\(?:ff?[fijlt]\\)" 0 font-shape-gstring]))
+(set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
+
+(setq +zen-text-scale 0.9)
+(defvar +zen-serif-p t
+  "Whether to use a serifed font with `mixed-pitch-mode'.")
+(defvar +zen-org-starhide t
+  "The value `org-modern-hide-stars' is set to.")
+
+(after! writeroom-mode
+  (defvar-local +zen--original-org-indent-mode-p nil)
+  (defvar-local +zen--original-mixed-pitch-mode-p nil)
+  (defun +zen-enable-mixed-pitch-mode-h ()
+    "Enable `mixed-pitch-mode' when in `+zen-mixed-pitch-modes'."
+    (when (apply #'derived-mode-p +zen-mixed-pitch-modes)
+      (if writeroom-mode
+          (progn
+            (setq +zen--original-mixed-pitch-mode-p mixed-pitch-mode)
+            (funcall (if +zen-serif-p #'mixed-pitch-serif-mode #'mixed-pitch-mode) 1))
+        (funcall #'mixed-pitch-mode (if +zen--original-mixed-pitch-mode-p 1 -1)))))
+  (defun +zen-prose-org-h ()
+    "Reformat the current Org buffer appearance for prose."
+    (when (eq major-mode 'org-mode)
+      (setq
+            visual-fill-column-width 80
+            org-adapt-indentation nil)
+      (when (featurep 'org-modern)
+        (setq-local org-modern-star '("🙘" "🙙" "🙚" "🙛")
+                    ;; org-modern-star '("🙐" "🙑" "🙒" "🙓" "🙔" "🙕" "🙖" "🙗")
+                    org-modern-hide-stars +zen-org-starhide)
+        (org-modern-mode -1)
+        (org-modern-mode 1))
+      (setq
+       +zen--original-org-indent-mode-p org-indent-mode)
+      (org-indent-mode -1)))
+  (defun +zen-nonprose-org-h ()
+    "Reverse the effect of `+zen-prose-org'."
+    (when (eq major-mode 'org-mode)
+      (when (bound-and-true-p org-modern-mode)
+        (org-modern-mode -1)
+        (org-modern-mode 1))
+      (when +zen--original-org-indent-mode-p (org-indent-mode 1))))
+  (pushnew! writeroom--local-variables
+            'display-line-numbers
+            'visual-fill-column-width
+            'org-adapt-indentation
+            'org-modern-mode
+            'org-modern-star
+            'org-modern-hide-stars)
+  (add-hook 'writeroom-mode-enable-hook #'+zen-prose-org-h)
+  (add-hook 'writeroom-mode-disable-hook #'+zen-nonprose-org-h))
+
 (defadvice! calc-embedded-with-side-pannel (&rest _)
   :after #'calc-do-embedded
   (when calc-embedded-trail-window
@@ -381,8 +476,6 @@
                (split-window-horizontally (- (/ (window-width) 2))))))
       (switch-to-buffer "*Calculator*")
       (select-window main-window))))
-
-(setq yas-triggers-in-field t)
 
 (setq org-fontify-quote-and-verse-blocks t)
 (setq org-highlight-latex-and-related '(native script entities))
@@ -616,16 +709,34 @@
    '(c . t)
    '(cpp . t)))
 
-(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-(defadvice! +org-edit-latex-env-after-insert-a (&rest _)
-  :after #'org-cdlatex-environment-indent
-  (org-edit-latex-environment))
-
-;(after! lsp-mode
-;  (setq lsp-language-id-configuration '((org-mode . "org"))
-;        lsp-language-id-regexp-alist '((org-mode . "//.*?LANGUAGE: \\(.*?\\)")))
-;  (add-hook 'org-mode-hook #'lsp-deferred))
-(setq)
+(cl-defmacro lsp-org-babel-enable (lang)
+  "Support LANG in org source code block."
+  (setq centaur-lsp 'lsp-mode)
+  (cl-check-type lang string)
+  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+    `(progn
+       (defun ,intern-pre (info)
+         (let ((file-name (->> info caddr (alist-get :file))))
+           (unless file-name
+             (setq file-name (make-temp-file "babel-lsp-")))
+           (setq buffer-file-name file-name)
+           (lsp-deferred)))
+       (put ',intern-pre 'function-documentation
+            (format "Enable lsp-mode in the buffer of org source block (%s)."
+                    (upcase ,lang)))
+       (if (fboundp ',edit-pre)
+           (advice-add ',edit-pre :after ',intern-pre)
+         (progn
+           (defun ,edit-pre (info)
+             (,intern-pre info))
+           (put ',edit-pre 'function-documentation
+                (format "Prepare local buffer environment for org source block (%s)."
+                        (upcase ,lang))))))))
+(defvar org-babel-lang-list
+  '("go" "python" "ipython" "bash" "sh"))
+(dolist (lang org-babel-lang-list)
+  (eval `(lsp-org-babel-enable ,lang)))
 
 ;;(cl-defmacro lsp-org-babel-enable (lang)
 ;;  "Support LANG in org source code block."
@@ -656,10 +767,27 @@
 ;;(dolist (lang org-babel-lang-list)
 ;;  (eval `(lsp-org-babel-enable ,lang)))
 
+(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+(defadvice! +org-edit-latex-env-after-insert-a (&rest _)
+  :after #'org-cdlatex-environment-indent
+  (org-edit-latex-environment))
+
+(setq org-highlight-latex-and-related '(native script entities))
+(require 'org-src)
+(add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
+(setq org-latex-preview-preamble
+      (concat
+       <<grab("latex-default-snippet-preamble")>>
+       "\n% Custom font\n\\usepackage{arev}\n\n"
+       ;<<grab("latex-maths-conveniences")>>))
+       ))
+
+;; Calibrated based on the TeX font and org-buffer font.
+(plist-put org-format-latex-options :zoom 0.93)
+
 (after! org
   (setq org-roam-directory  "~/org/roam/")
   (setq org-roam-completion-everywhere t))
-(require 'org-roam-export)
 
 (defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
   :around #'doom-modeline-buffer-file-name ; takes no args
@@ -753,6 +881,63 @@ Return nil otherwise."
 
     (car (cl-set-difference src-langs header-langs :test #'string=))))
 
+(use-package! org-ol-tree
+  :commands org-ol-tree
+  :config
+  (setq org-ol-tree-ui-icon-set
+        (if (and (display-graphic-p)
+                 (fboundp 'all-the-icons-material))
+            'all-the-icons
+          'unicode))
+  (org-ol-tree-ui--update-icon-set))
+
+(map! :map org-mode-map
+      :after org
+      :localleader
+      :desc "Outline" "O" #'org-ol-tree)
+
+;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
+(setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
+
+(defun +org-export-latex-fancy-item-checkboxes (text backend info)
+  (when (org-export-derived-backend-p backend 'latex)
+    (replace-regexp-in-string
+     "\\\\item\\[{$\\\\\\(\\w+\\)$}\\]"
+     (lambda (fullmatch)
+       (concat "\\\\item[" (pcase (substring fullmatch 9 -3) ; content of capture group
+                             ("square"   "\\\\checkboxUnchecked")
+                             ("boxminus" "\\\\checkboxTransitive")
+                             ("boxtimes" "\\\\checkboxChecked")
+                             (_ (substring fullmatch 9 -3))) "]"))
+     text)))
+
+(add-to-list 'org-export-filter-item-functions
+             '+org-export-latex-fancy-item-checkboxes)
+
+(after! org
+  (setq org-latex-custom-id '("\\usepackage{tocloft}"
+                              "\\setlength{\\cftbeforesecskip}{1ex}"
+                              "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
+                              "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}")))
+
+\providecolor{url}{HTML}{0077bb}
+\providecolor{link}{HTML}{882255}
+\providecolor{cite}{HTML}{999933}
+\hypersetup{
+  pdfauthor={%a},
+  pdftitle={%t},
+  pdfkeywords={%k},
+  pdfsubject={%d},
+  pdfcreator={%c},
+  pdflang={%L},
+  breaklinks=true,
+  colorlinks=true,
+  linkcolor=link,
+  urlcolor=url,
+  citecolor=cite
+}
+\urlstyle{same}
+
 (use-package! flycheck
   :ensure t
   :defer t
@@ -831,6 +1016,31 @@ if [ ! -d "$DIC_FOLDER" ]; then
     mv * "$DIC_FOLDER"
 fi
 
+(setq-default abbrev-mode t)
+
+(defvar abbrev-fn (expand-file-name "misc/abbrev.el" doom-user-dir))
+(setq abbrev-file-name abbrev-fn)
+
+(use-package! jinx
+        :defer t
+        :init
+        (add-hook 'doom-init-ui-hook #'global-jinx-mode)
+        :config
+        ;; Use my custom dictionary
+        (setq jinx-languages "en-custom")
+        ;; Extra face(s) to ignore
+        (push 'org-inline-src-block
+        (alist-get 'org-mode jinx-exclude-faces))
+        ;; Take over the relevant bindings.
+        (after! ispell
+        (global-set-key [remap ispell-word] #'jinx-correct))
+        (after! evil-commands
+        (global-set-key [remap evil-next-flyspell-error] #'jinx-next)
+        (global-set-key [remap evil-prev-flyspell-error] #'jinx-previous))
+        ;; I prefer for `point' to end up at the start of the word,
+        ;; not just after the end.
+        (advice-add 'jinx-next :after (lambda (_) (left-word))))
+
 (after! cdlatex
   (setq cdlatex-env-alist
         '(("bmatrix" "\\begin{bmatrix}\n?\n\\end{bmatrix}" nil)
@@ -868,6 +1078,11 @@ fi
 
 (use-package! company-graphviz-dot
   :after graphviz-dot-mode)
+
+(setq yas-triggers-in-field t)
+
+(use-package! aas
+  :commands aas-mode)
 
 ;;"A variable-pitch face with serifs."
 ;;:group 'basic-faces)
