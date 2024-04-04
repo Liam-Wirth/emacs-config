@@ -120,7 +120,7 @@
                     :height 140
                     :weight 'medium)
 (set-face-attribute 'variable-pitch nil
-                    :font "JetBrains Mono NerdFont"
+                    :font "Overpass"
                     :height 120
                     :weight 'medium)
 (set-face-attribute 'fixed-pitch nil
@@ -132,10 +132,13 @@
                     :slant 'italic)
 ;;(set-face-attribute 'font-lock-keyword-face nil
 ;; :slant 'italic)
-
+(set-face-attribute 'doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
+(set-face-attribute 'doom-symbol-font (font-spec :family "JuliaMono"))
 (add-to-list 'default-frame-alist '(font . "JetBrains Mono-15"))
 
 (setq-default line-spacing 0.12)
+
+
 
 (setq doom-theme 'doom-gruvbox)
 (setq display-line-numbers-type 'relative)
@@ -489,90 +492,14 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
   (mixed-pitch-mode 1)
   (hl-line-mode -1)
   (display-line-numbers-mode -1)
-
+    (org-modern-mode -1)
+    (org-modern-mode 1)
   ; (olivetti-mode 1)
-  ;(org-num-mode 1)
+  ;(org-Num-mode 1)
   ;(org-superstar-mode -1)
   ; (org-indent-mode -1)
   ))
 (add-hook! 'org-mode-hook  #'nicer-org)
-
-(use-package org-modern
-  :hook (org-mode . org-modern-mode)
-  :config
-  (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
-        org-modern-table-vertical 1
-        org-modern-table-horizontal 0.2
-        org-modern-list '((43 . "➤")
-                          (45 . "–")
-                          (42 . "•"))
-        org-modern-todo-faces
-        '(("TODO" :inverse-video t :inherit org-todo)
-          ("PROJ" :inverse-video t :inherit +org-todo-project)
-          ("STRT" :inverse-video t :inherit +org-todo-active)
-          ("[-]"  :inverse-video t :inherit +org-todo-active)
-          ("HOLD" :inverse-video t :inherit +org-todo-onhold)
-          ("WAIT" :inverse-video t :inherit +org-todo-onhold)
-          ("[?]"  :inverse-video t :inherit +org-todo-onhold)
-          ("KILL" :inverse-video t :inherit +org-todo-cancel)
-          ("NO"   :inverse-video t :inherit +org-todo-cancel))
-        org-modern-footnote
-        (cons nil (cadr org-script-display))
-        org-modern-block-fringe nil
-        org-modern-block-name
-        '((t . t)
-          ("src" "»" "«")
-          ("example" "»–" "–«")
-          ("quote" "❝" "❞")
-          ("export" "⏩" "⏪"))
-        org-modern-progress nil
-        org-modern-priority nil
-        org-modern-horizontal-rule (make-string 36 ?─)
-        org-modern-keyword
-        '((t . t)
-          ("title" . "𝙏")
-          ("subtitle" . "𝙩")
-          ("author" . "𝘼")
-          ("email" . #("" 0 1 (display (raise -0.14))))
-          ("date" . "𝘿")
-          ("property" . "☸")
-          ("options" . "⌥")
-          ("startup" . "⏻")
-          ("macro" . "𝓜")
-          ("bind" . #("" 0 1 (display (raise -0.1))))
-          ("bibliography" . "")
-          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
-          ("cite_export" . "⮭")
-          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
-          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
-          ("include" . "⇤")
-          ("setupfile" . "⇚")
-          ("html_head" . "🅷")
-          ("html" . "🅗")
-          ("latex_class" . "🄻")
-          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
-          ("latex_header" . "🅻")
-          ("latex_header_extra" . "🅻⁺")
-          ("latex" . "🅛")
-          ("beamer_theme" . "🄱")
-          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
-          ("beamer_font_theme" . "🄱𝐀")
-          ("beamer_header" . "🅱")
-          ("beamer" . "🅑")
-          ("attr_latex" . "🄛")
-          ("attr_html" . "🄗")
-          ("attr_org" . "⒪")
-          ("call" . #("" 0 1 (display (raise -0.15))))
-          ("name" . "⁍")
-          ("header" . "›")
-          ("caption" . "☰")
-          ("results" . "Results")))
-  ;(custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo))
-  )
-(add-hook 'org-mode-hook org-modern-mode)
-(setq global-org-modern-mode t) ; make sure we are using org modern
-
-(add-hook 'org-mode-hook org-modern-mode)
 
 (defun open-temp-buffer-src ()
 "Open Temporary Buffer When Editing Src Blocks"
@@ -920,6 +847,23 @@ Return nil otherwise."
                               "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
                               "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}")))
 
+(after! org
+(setq org-latex-classes
+      '(("report"
+           "\\documentclass{report}"
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+           ("\\paragraph{%s}" . "\\paragraph*{%s}")
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+           ;; Customize the position of the "Contents" title
+           "\\usepackage{tocloft}"
+           "\\setlength{\\cftbeforesecsckip}{1ex}"
+           "\\setlength{\\cftbeforesubsecskip{0.5ex}"
+           "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+           ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")))))
+
 \providecolor{url}{HTML}{0077bb}
 \providecolor{link}{HTML}{882255}
 \providecolor{cite}{HTML}{999933}
@@ -937,6 +881,81 @@ Return nil otherwise."
   citecolor=cite
 }
 \urlstyle{same}
+
+(use-package! org-modern
+  :ensure t
+  :hook (org-mode . org-modern-mode)
+  :config
+  (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
+        org-modern-table-vertical 1
+        org-modern-table-horizontal 0.2
+        org-modern-list '((43 . "➤")
+                          (45 . "–")
+                          (42 . "•"))
+        org-modern-todo-faces
+        '(("TODO" :inverse-video t :inherit org-todo)
+          ("PROJ" :inverse-video t :inherit +org-todo-project)
+          ("STRT" :inverse-video t :inherit +org-todo-active)
+          ("[-]"  :inverse-video t :inherit +org-todo-active)
+          ("HOLD" :inverse-video t :inherit +org-todo-onhold)
+          ("WAIT" :inverse-video t :inherit +org-todo-onhold)
+          ("[?]"  :inverse-video t :inherit +org-todo-onhold)
+          ("KILL" :inverse-video t :inherit +org-todo-cancel)
+          ("NO"   :inverse-video t :inherit +org-todo-cancel))
+        org-modern-footnote
+        (cons nil (cadr org-script-display))
+        org-modern-block-fringe nil
+        org-modern-block-name
+        '((t . t)
+          ("src" "»" "«")
+          ("example" "»–" "–«")
+          ("quote" "❝" "❞")
+          ("export" "⏩" "⏪"))
+        org-modern-progress nil
+        org-modern-priority nil
+        org-modern-horizontal-rule (make-string 36 ?─)
+        org-modern-keyword
+        '((t . t)
+          ("title" . "𝙏")
+          ("subtitle" . "𝙩")
+          ("author" . "𝘼")
+          ("email" . #("" 0 1 (display (raise -0.14))))
+          ("date" . "𝘿")
+          ("property" . "☸")
+          ("options" . "⌥")
+          ("startup" . "⏻")
+          ("macro" . "𝓜")
+          ("bind" . #("" 0 1 (display (raise -0.1))))
+          ("bibliography" . "")
+          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
+          ("cite_export" . "⮭")
+          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
+          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
+          ("include" . "⇤")
+          ("setupfile" . "⇚")
+          ("html_head" . "🅷")
+          ("html" . "🅗")
+          ("latex_class" . "🄻")
+          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
+          ("latex_header" . "🅻")
+          ("latex_header_extra" . "🅻⁺")
+          ("latex" . "🅛")
+          ("beamer_theme" . "🄱")
+          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
+          ("beamer_font_theme" . "🄱𝐀")
+          ("beamer_header" . "🅱")
+          ("beamer" . "🅑")
+          ("attr_latex" . "🄛")
+          ("attr_html" . "🄗")
+          ("attr_org" . "⒪")
+          ("call" . #("" 0 1 (display (raise -0.15))))
+          ("name" . "⁍")
+          ("header" . "›")
+          ("caption" . "☰")
+          ("results" . "🠶")))
+  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
+
+(add-hook 'org-mode-hook org-modern-mode)
 
 (use-package! flycheck
   :ensure t

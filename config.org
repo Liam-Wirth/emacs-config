@@ -205,7 +205,7 @@ To See stuff responsible for org mode look and feel, see:
                     :height 140
                     :weight 'medium)
 (set-face-attribute 'variable-pitch nil
-                    :font "JetBrains Mono NerdFont"
+                    :font "Overpass"
                     :height 120
                     :weight 'medium)
 (set-face-attribute 'fixed-pitch nil
@@ -217,7 +217,8 @@ To See stuff responsible for org mode look and feel, see:
                     :slant 'italic)
 ;;(set-face-attribute 'font-lock-keyword-face nil
 ;; :slant 'italic)
-
+(set-face-attribute 'doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
+(set-face-attribute 'doom-symbol-font (font-spec :family "JuliaMono"))
 (add-to-list 'default-frame-alist '(font . "JetBrains Mono-15"))
 
 (setq-default line-spacing 0.12)
@@ -226,6 +227,9 @@ To See stuff responsible for org mode look and feel, see:
 #+RESULTS:
 : 0.12
 
+#+begin_src emacs-lisp
+
+#+end_src
 ** Theme!
 #+begin_src emacs-lisp
 (setq doom-theme 'doom-gruvbox)
@@ -678,9 +682,10 @@ the swag
   (mixed-pitch-mode 1)
   (hl-line-mode -1)
   (display-line-numbers-mode -1)
-
+    (org-modern-mode -1)
+    (org-modern-mode 1)
   ; (olivetti-mode 1)
-  ;(org-num-mode 1)
+  ;(org-Num-mode 1)
   ;(org-superstar-mode -1)
   ; (org-indent-mode -1)
   ))
@@ -689,92 +694,6 @@ the swag
 
 #+RESULTS:
 
-** TODO Org-Modern
-the key to it looking *pretty*
-#+begin_src emacs-lisp
-(use-package org-modern
-  :hook (org-mode . org-modern-mode)
-  :config
-  (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
-        org-modern-table-vertical 1
-        org-modern-table-horizontal 0.2
-        org-modern-list '((43 . "➤")
-                          (45 . "–")
-                          (42 . "•"))
-        org-modern-todo-faces
-        '(("TODO" :inverse-video t :inherit org-todo)
-          ("PROJ" :inverse-video t :inherit +org-todo-project)
-          ("STRT" :inverse-video t :inherit +org-todo-active)
-          ("[-]"  :inverse-video t :inherit +org-todo-active)
-          ("HOLD" :inverse-video t :inherit +org-todo-onhold)
-          ("WAIT" :inverse-video t :inherit +org-todo-onhold)
-          ("[?]"  :inverse-video t :inherit +org-todo-onhold)
-          ("KILL" :inverse-video t :inherit +org-todo-cancel)
-          ("NO"   :inverse-video t :inherit +org-todo-cancel))
-        org-modern-footnote
-        (cons nil (cadr org-script-display))
-        org-modern-block-fringe nil
-        org-modern-block-name
-        '((t . t)
-          ("src" "»" "«")
-          ("example" "»–" "–«")
-          ("quote" "❝" "❞")
-          ("export" "⏩" "⏪"))
-        org-modern-progress nil
-        org-modern-priority nil
-        org-modern-horizontal-rule (make-string 36 ?─)
-        org-modern-keyword
-        '((t . t)
-          ("title" . "𝙏")
-          ("subtitle" . "𝙩")
-          ("author" . "𝘼")
-          ("email" . #("" 0 1 (display (raise -0.14))))
-          ("date" . "𝘿")
-          ("property" . "☸")
-          ("options" . "⌥")
-          ("startup" . "⏻")
-          ("macro" . "𝓜")
-          ("bind" . #("" 0 1 (display (raise -0.1))))
-          ("bibliography" . "")
-          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
-          ("cite_export" . "⮭")
-          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
-          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
-          ("include" . "⇤")
-          ("setupfile" . "⇚")
-          ("html_head" . "🅷")
-          ("html" . "🅗")
-          ("latex_class" . "🄻")
-          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
-          ("latex_header" . "🅻")
-          ("latex_header_extra" . "🅻⁺")
-          ("latex" . "🅛")
-          ("beamer_theme" . "🄱")
-          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
-          ("beamer_font_theme" . "🄱𝐀")
-          ("beamer_header" . "🅱")
-          ("beamer" . "🅑")
-          ("attr_latex" . "🄛")
-          ("attr_html" . "🄗")
-          ("attr_org" . "⒪")
-          ("call" . #("" 0 1 (display (raise -0.15))))
-          ("name" . "⁍")
-          ("header" . "›")
-          ("caption" . "☰")
-          ("results" . "Results")))
-  ;(custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo))
-  )
-(add-hook 'org-mode-hook org-modern-mode)
-(setq global-org-modern-mode t) ; make sure we are using org modern
-#+end_src
-
-#+RESULTS:
-: t
-
-*** Org-Modern hook
-#+begin_src emacs-lisp
-(add-hook 'org-mode-hook org-modern-mode)
-#+end_src
 ** A silly little keybind idea
 open up a custom little swag baby gangster type thing whenever I hit a keybind while in a src block to enter a temp buffer
 #+begin_src emacs-lisp
@@ -1050,6 +969,9 @@ print
   :after #'org-cdlatex-environment-indent
   (org-edit-latex-environment))
 #+end_src
+
+#+RESULTS:
+
 #+begin_src emacs-lisp
 (setq org-highlight-latex-and-related '(native script entities))
 (require 'org-src)
@@ -1236,6 +1158,7 @@ smart emacs guy says latexmk + biber is better so uhh, whatever you say boss!
 #+end_src
 
 #+RESULTS:
+| LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f |
 
 
 **** Nicer Checkboxes
@@ -1257,9 +1180,11 @@ smart emacs guy says latexmk + biber is better so uhh, whatever you say boss!
 #+end_src
 
 #+RESULTS:
+| +org-export-latex-fancy-item-checkboxes |
 
 **** Better Table of Contents
 #+begin_src emacs-lisp
+
 (after! org
   (setq org-latex-custom-id '("\\usepackage{tocloft}"
                               "\\setlength{\\cftbeforesecskip}{1ex}"
@@ -1269,6 +1194,28 @@ smart emacs guy says latexmk + biber is better so uhh, whatever you say boss!
 
 #+RESULTS:
 | \usepackage{tocloft} | \setlength{\cftbeforesecskip}{1ex} | \setlength{\cftbeforesubsecskip}{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} |
+#+begin_src emacs-lisp
+(after! org
+(setq org-latex-classes
+      '(("report"
+           "\\documentclass{report}"
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+           ("\\paragraph{%s}" . "\\paragraph*{%s}")
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+           ;; Customize the position of the "Contents" title
+           "\\usepackage{tocloft}"
+           "\\setlength{\\cftbeforesecsckip}{1ex}"
+           "\\setlength{\\cftbeforesubsecskip{0.5ex}"
+           "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+           ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")))))
+
+#+end_src
+
+#+RESULTS:
+| report | \documentclass{report} | (\chapter{%s} . \chapter*{%s}) | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s}) | (\subparagraph{%s} . \subparagraph*{%s}) | \usepackage{tocloft} | \setlength{\cftbeforesecsckip}{1ex} | \setlength{\cftbeforesubsecskip{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} | (\tableofcontents . \tableofcontents\thispagestyle{empty}\vspace*{\fill}\clearpage) |
 
 The =hyperref= setup needs to be handled separately however.
 #+name: latex-fancy-hyperref
@@ -1293,6 +1240,89 @@ The =hyperref= setup needs to be handled separately however.
 #+end_src
 #+RESULTS:
 
+** TODO Org-Modern
+the key to it looking *pretty*
+#+begin_src emacs-lisp :tangle yes
+(use-package! org-modern
+  :ensure t
+  :hook (org-mode . org-modern-mode)
+  :config
+  (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
+        org-modern-table-vertical 1
+        org-modern-table-horizontal 0.2
+        org-modern-list '((43 . "➤")
+                          (45 . "–")
+                          (42 . "•"))
+        org-modern-todo-faces
+        '(("TODO" :inverse-video t :inherit org-todo)
+          ("PROJ" :inverse-video t :inherit +org-todo-project)
+          ("STRT" :inverse-video t :inherit +org-todo-active)
+          ("[-]"  :inverse-video t :inherit +org-todo-active)
+          ("HOLD" :inverse-video t :inherit +org-todo-onhold)
+          ("WAIT" :inverse-video t :inherit +org-todo-onhold)
+          ("[?]"  :inverse-video t :inherit +org-todo-onhold)
+          ("KILL" :inverse-video t :inherit +org-todo-cancel)
+          ("NO"   :inverse-video t :inherit +org-todo-cancel))
+        org-modern-footnote
+        (cons nil (cadr org-script-display))
+        org-modern-block-fringe nil
+        org-modern-block-name
+        '((t . t)
+          ("src" "»" "«")
+          ("example" "»–" "–«")
+          ("quote" "❝" "❞")
+          ("export" "⏩" "⏪"))
+        org-modern-progress nil
+        org-modern-priority nil
+        org-modern-horizontal-rule (make-string 36 ?─)
+        org-modern-keyword
+        '((t . t)
+          ("title" . "𝙏")
+          ("subtitle" . "𝙩")
+          ("author" . "𝘼")
+          ("email" . #("" 0 1 (display (raise -0.14))))
+          ("date" . "𝘿")
+          ("property" . "☸")
+          ("options" . "⌥")
+          ("startup" . "⏻")
+          ("macro" . "𝓜")
+          ("bind" . #("" 0 1 (display (raise -0.1))))
+          ("bibliography" . "")
+          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
+          ("cite_export" . "⮭")
+          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
+          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
+          ("include" . "⇤")
+          ("setupfile" . "⇚")
+          ("html_head" . "🅷")
+          ("html" . "🅗")
+          ("latex_class" . "🄻")
+          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
+          ("latex_header" . "🅻")
+          ("latex_header_extra" . "🅻⁺")
+          ("latex" . "🅛")
+          ("beamer_theme" . "🄱")
+          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
+          ("beamer_font_theme" . "🄱𝐀")
+          ("beamer_header" . "🅱")
+          ("beamer" . "🅑")
+          ("attr_latex" . "🄛")
+          ("attr_html" . "🄗")
+          ("attr_org" . "⒪")
+          ("call" . #("" 0 1 (display (raise -0.15))))
+          ("name" . "⁍")
+          ("header" . "›")
+          ("caption" . "☰")
+          ("results" . "🠶")))
+  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
+  #+end_src
+#+RESULTS:
+| org-modern-mode | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+
+*** Org-Modern hook
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook org-modern-mode)
+#+end_src
 * Language Stuff
 doom emacs is super nice in having a lot of easy configuration found in the [[doomdir: init.el][init.el]] file, but for anything that doesn't come with doom, I likely have to add it to the [[doomdir:packages.el][packages.el]] file, and handle it here
 either that, or just specify options for stuff that needs it
@@ -1533,6 +1563,8 @@ gangster swagger
      (?a    "\\abs"           nil          t    nil  nil))))
 #+end_src
 #+RESULTS:
+| 66 | \mathbb | nil | t | nil | nil |
+| 97 | \abs    | nil | t | nil | nil |
 ** GraphViz
 #+begin_src emacs-lisp
 (use-package! graphviz-dot-mode
@@ -1563,6 +1595,8 @@ auto expanding snippets
 
 #+RESULTS:
 : aas-mode
+
+
 
 
 * Unsorted Config (temporary)
