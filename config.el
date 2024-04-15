@@ -7,7 +7,7 @@
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
-(setq org-agenda-files '("~/org/roam/dailies"))
+(setq org-agenda-files '("~/org/roam/daily/"))
 
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
@@ -136,7 +136,7 @@
 (set-face-attribute 'doom-symbol-font (font-spec :family "JuliaMono"))
 (add-to-list 'default-frame-alist '(font . "JetBrains Mono-15"))
 
-(setq-default line-spacing 0.12)
+(setq-default line-spacing 0.05)
 
 
 
@@ -280,36 +280,36 @@
    ))
 (setq which-key-allow-multiple-replacements t)
 
-(use-package keycast
-  :commands keycast-mode
-  :config
-  (define-minor-mode keycast-mode
-    "Show current command and its key binding in the mode line."
-    :global t
-    (if keycast-mode
-        (progn
-          (add-hook 'pre-command-hook 'keycast--update t)
-          (add-to-list 'global-mode-string '("" mode-line-keycast " ")))
-      (remove-hook 'pre-command-hook 'keycast--update)
-      (setq global-mode-string (remove '("" mode-line-keycast " ") global-mode-string))))
-  (custom-set-faces!
-    '(keycast-command :inherit doom-modeline-debug
-      :height 0.9)
-    '(keycast-key :inherit custom-modified
-      :height 1.1
-      :weight bold)))
+;; (use-package keycast
+;;   :commands keycast-mode
+;;   :config
+;;   (define-minor-mode keycast-mode
+;;     "Show current command and its key binding in the mode line."
+;;     :global t
+;;     (if keycast-mode
+;;         (progn
+;;           (add-hook 'pre-command-hook 'keycast--update t)
+;;           (add-to-list 'global-mode-string '("" mode-line-keycast " ")))
+;;       (remove-hook 'pre-command-hook 'keycast--update)
+;;       (setq global-mode-string (remove '("" mode-line-keycast " ") global-mode-string))))
+;;   (custom-set-faces!
+;;     '(keycast-command :inherit doom-modeline-debug
+;;       :height 0.9)
+;;     '(keycast-key :inherit custom-modified
+;;       :height 1.1
+;;       :weight bold)))
 
 (use-package! elcord
   :commands elcord-mode
   :config
   (setq elcord-use-major-mode-as-main-icon t))
 
-(use-package! calctex
-  :commands calctex-mode
-  :init
-  (add-hook 'calc-mode-hook #'calctex-mode)
-  :config
-  )
+;; (use-package! calctex
+;;   :commands calctex-mode
+;;   :init
+;;   (add-hook 'calc-mode-hook #'calctex-mode)
+;;   :config
+;; )
 
 ;;(use-package! calctex
 ;;  :commands calctex-mode
@@ -403,7 +403,6 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
 (set-char-table-range composition-function-table ?f '(["\\(?:ff?[fijlt]\\)" 0 font-shape-gstring]))
 (set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
 
-(setq +zen-text-scale 0.9)
 (defvar +zen-serif-p t
   "Whether to use a serifed font with `mixed-pitch-mode'.")
 (defvar +zen-org-starhide t
@@ -423,8 +422,8 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
   (defun +zen-prose-org-h ()
     "Reformat the current Org buffer appearance for prose."
     (when (eq major-mode 'org-mode)
-      (setq
-            visual-fill-column-width 80
+      (setq display-line-numbers nil
+            visual-fill-column-width 60
             org-adapt-indentation nil)
       (when (featurep 'org-modern)
         (setq-local org-modern-star '("🙘" "🙙" "🙚" "🙛")
@@ -884,7 +883,7 @@ Return nil otherwise."
 
 (use-package! org-modern
   :ensure t
-  :hook (org-mode . org-modern-mode)
+  :hook '(org-mode . org-modern-mode)
   :config
   (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
         org-modern-table-vertical 1
@@ -955,7 +954,64 @@ Return nil otherwise."
           ("results" . "🠶")))
   (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
 
-(add-hook 'org-mode-hook org-modern-mode)
+(add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
+
+(setq org-roam-dailies-capture-templates
+          (let ((head
+                 (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n* Daily Overview\n"
+                         "#+begin_src emacs-lisp :results value raw\n"
+                         "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
+                         "#+end_src\n"
+                         "* [/] Do Today\n* [/] Maybe Do Today\n* Journal\n")))
+            `(("j" "journal" entry
+               "* %<%H:%M> %?"
+               :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal")))
+              ("t" "do today" item
+               "[ ] %i%?"
+               :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("TODO Do Today"))
+               :immediate-finish nil)
+              ("m" "maybe do today" item
+               "[ ] %a"
+               :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("Maybe Do Today"))
+               :immediate-finish t))))
+
+;; Set up org-agenda-files to include Org Roam dailies directory
+(setq org-agenda-files (append org-agenda-files (list "~/org/roam/daily")))
+
+; preface, I stole this straight from the internet, so I dunno even if this will work, and only have a loose Idea as to how it should work
+(defun as/org-roam-today-mk-agenda-link ()
+  (interactive)
+  (let* ((marker (or (org-get-at-bol 'org-marker)
+                     (org-agenda-error)))
+         (buffer (marker-buffer marker))
+         (pos (marker-position marker)))
+    (with-current-buffer buffer
+      (save-excursion
+        (goto-char pos)
+        (org-roam-dailies-capture-today)))))
+
+(defun as/get-daily-agenda (&optional date)
+  "Return the agenda for the day as a string."
+  (interactive)
+  (let ((file (make-temp-file "daily-agenda" nil ".txt")))
+    (org-agenda nil "d" nil)
+    (when date (org-agenda-goto-date date))
+    (org-agenda-write file nil nil "*Org Agenda(d)*")
+    (kill-buffer)
+    (with-temp-buffer
+      (insert-file-contents file)
+      (goto-char (point-min))
+      (kill-line 2)
+      (while (re-search-forward "^  " nil t)
+        (replace-match "- " nil nil))
+      (buffer-string))))
+
+;; Customize the default Org agenda command to include Org Roam daily files
+(setq org-agenda-custom-commands
+      '(("d" "Org Roam Daily Files"
+         ((agenda "" ((org-agenda-files (list "~/org/roam/daily"))))
+          (function as/org-roam-today-mk-agenda-link)
+          (function as/get-daily-agenda)))))
 
 (use-package! flycheck
   :ensure t
@@ -1089,7 +1145,7 @@ fi
 
 (use-package! graphviz-dot-mode
   :commands graphviz-dot-mode
-  :mode ("\\.dot\\'" . graphviz-dot-mode)
+  :mode '("\\.dot\\'" . graphviz-dot-mode)
   :init
   (after! org
     (setcdr (assoc "dot" org-src-lang-modes)

@@ -1,4 +1,5 @@
 
+
 #+title: Liams Emacs Config
 #+PROPERTY: header-args :tangle ~/.config/doom/config.el
 #+latex_class: report
@@ -8,7 +9,6 @@
 #+property: header-args:elisp :results replace :exports code
 #+options: coverpage:yes
 #+startup: fold
-
 
 huuuuge shoutout to this gangster, I basically nabbed like 95 percent of my config from him, after using a shitty hand written one for like 3 weeks with a 30 second load time
 
@@ -46,11 +46,11 @@ TODO: Fix the following
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
 (setq org-directory "~/org/")
-(setq org-agenda-files '("~/org/roam/dailies"))
+(setq org-agenda-files '("~/org/roam/daily/"))
 #+END_SRC
 
 #+RESULTS:
-| ~/org/roam/dailies |
+| ~/org/roam/daily |
 
 ** Leftover block from the original config.el file, has some helpful reminders so I'll keep it
 #+BEGIN_SRC emacs-lisp
@@ -221,11 +221,11 @@ To See stuff responsible for org mode look and feel, see:
 (set-face-attribute 'doom-symbol-font (font-spec :family "JuliaMono"))
 (add-to-list 'default-frame-alist '(font . "JetBrains Mono-15"))
 
-(setq-default line-spacing 0.12)
+(setq-default line-spacing 0.05)
 #+end_src
 
 #+RESULTS:
-: 0.12
+: 0.05
 
 #+begin_src emacs-lisp
 
@@ -425,24 +425,24 @@ it's like the one from neovim? (or is it the other way around?)
 ** KeyCast
 neat little plugin I might never use, but cool to have
 #+begin_src emacs-lisp
-(use-package keycast
-  :commands keycast-mode
-  :config
-  (define-minor-mode keycast-mode
-    "Show current command and its key binding in the mode line."
-    :global t
-    (if keycast-mode
-        (progn
-          (add-hook 'pre-command-hook 'keycast--update t)
-          (add-to-list 'global-mode-string '("" mode-line-keycast " ")))
-      (remove-hook 'pre-command-hook 'keycast--update)
-      (setq global-mode-string (remove '("" mode-line-keycast " ") global-mode-string))))
-  (custom-set-faces!
-    '(keycast-command :inherit doom-modeline-debug
-      :height 0.9)
-    '(keycast-key :inherit custom-modified
-      :height 1.1
-      :weight bold)))
+;; (use-package keycast
+;;   :commands keycast-mode
+;;   :config
+;;   (define-minor-mode keycast-mode
+;;     "Show current command and its key binding in the mode line."
+;;     :global t
+;;     (if keycast-mode
+;;         (progn
+;;           (add-hook 'pre-command-hook 'keycast--update t)
+;;           (add-to-list 'global-mode-string '("" mode-line-keycast " ")))
+;;       (remove-hook 'pre-command-hook 'keycast--update)
+;;       (setq global-mode-string (remove '("" mode-line-keycast " ") global-mode-string))))
+;;   (custom-set-faces!
+;;     '(keycast-command :inherit doom-modeline-debug
+;;       :height 0.9)
+;;     '(keycast-key :inherit custom-modified
+;;       :height 1.1
+;;       :weight bold)))
 #+end_src
 ** TODO Elcord
 everyone MUST KNOW I'M USING EMACS (as well as vim)
@@ -455,12 +455,12 @@ everyone MUST KNOW I'M USING EMACS (as well as vim)
 ** CalcTeX
 this is broken FIXME:
 #+begin_src emacs-lisp
-(use-package! calctex
-  :commands calctex-mode
-  :init
-  (add-hook 'calc-mode-hook #'calctex-mode)
-  :config
-  )
+;; (use-package! calctex
+;;   :commands calctex-mode
+;;   :init
+;;   (add-hook 'calc-mode-hook #'calctex-mode)
+;;   :config
+;; )
 #+end_src
 
 #+RESULTS:
@@ -573,9 +573,9 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
 (set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
 #+end_src
 #+RESULTS:
+| [\(?:Th\) 0 font-shape-gstring] |
 ** WriteWroom
 #+begin_src emacs-lisp
-(setq +zen-text-scale 0.9)
 (defvar +zen-serif-p t
   "Whether to use a serifed font with `mixed-pitch-mode'.")
 (defvar +zen-org-starhide t
@@ -595,8 +595,8 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
   (defun +zen-prose-org-h ()
     "Reformat the current Org buffer appearance for prose."
     (when (eq major-mode 'org-mode)
-      (setq
-            visual-fill-column-width 80
+      (setq display-line-numbers nil
+            visual-fill-column-width 60
             org-adapt-indentation nil)
       (when (featurep 'org-modern)
         (setq-local org-modern-star '("🙘" "🙙" "🙚" "🙛")
@@ -626,7 +626,6 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
 #+end_src
 
 #+RESULTS:
-| +zen-nonprose-org-h |
 
 *** Something regarding calcs placement
 #+begin_src emacs-lisp
@@ -660,6 +659,7 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
 
 #+end_src
 **
+
 * Org
 the swag
 ** Org Variables
@@ -1241,11 +1241,12 @@ The =hyperref= setup needs to be handled separately however.
 #+RESULTS:
 
 ** TODO Org-Modern
+still need to fix this :/
 the key to it looking *pretty*
 #+begin_src emacs-lisp :tangle yes
 (use-package! org-modern
   :ensure t
-  :hook (org-mode . org-modern-mode)
+  :hook '(org-mode . org-modern-mode)
   :config
   (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
         org-modern-table-vertical 1
@@ -1321,8 +1322,97 @@ the key to it looking *pretty*
 
 *** Org-Modern hook
 #+begin_src emacs-lisp
-(add-hook 'org-mode-hook org-modern-mode)
+(add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
 #+end_src
+
+#+RESULTS:
+| (lambda nil (org-modern-mode 1)) | org-modern-mode | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+
+** Org-Agenda
+*** Define My Daily Template:
+
+#+begin_src emacs-lisp
+(setq org-roam-dailies-capture-templates
+          (let ((head
+                 (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n* Daily Overview\n"
+                         "#+begin_src emacs-lisp :results value raw\n"
+                         "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
+                         "#+end_src\n"
+                         "* [/] Do Today\n* [/] Maybe Do Today\n* Journal\n")))
+            `(("j" "journal" entry
+               "* %<%H:%M> %?"
+               :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("Journal")))
+              ("t" "do today" item
+               "[ ] %i%?"
+               :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("TODO Do Today"))
+               :immediate-finish nil)
+              ("m" "maybe do today" item
+               "[ ] %a"
+               :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("Maybe Do Today"))
+               :immediate-finish t))))
+#+end_src
+
+#+RESULTS:
+| j | journal | entry | * %<%H:%M> %? | :if-new | (file+head+olp %<%Y-%m-%d>.org #+title: %<%Y-%m-%d (%A)> |
+
+Hello
+? I would like this to work, but honestly don't know if it will work all to well for me, lets see I guess
+#+begin_src emacs-lisp
+;; Set up org-agenda-files to include Org Roam dailies directory
+(setq org-agenda-files (append org-agenda-files (list "~/org/roam/daily")))
+
+#+end_src
+
+#+RESULTS:
+| ~/org/roam/daily/ | ~/org/roam/daily |
+
+*** Defining Some Custom Commands
+#+begin_src emacs-lisp
+; preface, I stole this straight from the internet, so I dunno even if this will work, and only have a loose Idea as to how it should work
+(defun as/org-roam-today-mk-agenda-link ()
+  (interactive)
+  (let* ((marker (or (org-get-at-bol 'org-marker)
+                     (org-agenda-error)))
+         (buffer (marker-buffer marker))
+         (pos (marker-position marker)))
+    (with-current-buffer buffer
+      (save-excursion
+        (goto-char pos)
+        (org-roam-dailies-capture-today)))))
+
+(defun as/get-daily-agenda (&optional date)
+  "Return the agenda for the day as a string."
+  (interactive)
+  (let ((file (make-temp-file "daily-agenda" nil ".txt")))
+    (org-agenda nil "d" nil)
+    (when date (org-agenda-goto-date date))
+    (org-agenda-write file nil nil "*Org Agenda(d)*")
+    (kill-buffer)
+    (with-temp-buffer
+      (insert-file-contents file)
+      (goto-char (point-min))
+      (kill-line 2)
+      (while (re-search-forward "^  " nil t)
+        (replace-match "- " nil nil))
+      (buffer-string))))
+#+end_src
+
+#+RESULTS:
+: as/get-daily-agenda
+
+*** Tell Org-Agenda About The Custom CommandS
+#+begin_src emacs-lisp
+;; Customize the default Org agenda command to include Org Roam daily files
+(setq org-agenda-custom-commands
+      '(("d" "Org Roam Daily Files"
+         ((agenda "" ((org-agenda-files (list "~/org/roam/daily"))))
+          (function as/org-roam-today-mk-agenda-link)
+          (function as/get-daily-agenda)))))
+#+end_src
+
+#+RESULTS:
+| d | Org Roam Daily Files | ((agenda  ((org-agenda-files (list ~/org/roam/daily)))) #'as/org-roam-today-mk-agenda-link #'as/get-daily-agenda) |
+
 * Language Stuff
 doom emacs is super nice in having a lot of easy configuration found in the [[doomdir: init.el][init.el]] file, but for anything that doesn't come with doom, I likely have to add it to the [[doomdir:packages.el][packages.el]] file, and handle it here
 either that, or just specify options for stuff that needs it
@@ -1352,7 +1442,7 @@ either that, or just specify options for stuff that needs it
 | /\.doomrc$            | :trigger      | __doomrc                            | :mode         | emacs-lisp-mode   |          |                 |
 | /packages\.el$        | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-packages   | :mode    | emacs-lisp-mode |
 | /doctor\.el$          | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-doctor     | :mode    | emacs-lisp-mode |
-| /test/.+\.el$           | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-test       | :mode    | emacs-lisp-mode |
+| /test/.+\.el$         | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-test       | :mode    | emacs-lisp-mode |
 | \.el$                 | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-module     | :mode    | emacs-lisp-mode |
 | -test\.el$            | :mode         | emacs-ert-mode                      |               |                   |          |                 |
 | emacs-lisp-mode       | :trigger      | __package                           |               |                   |          |                 |
@@ -1372,7 +1462,7 @@ either that, or just specify options for stuff that needs it
 | scss-mode             |               |                                     |               |                   |          |                 |
 | /main\.java$          | :trigger      | __main                              | :mode         | java-mode         |          |                 |
 | /build\.gradle$       | :trigger      | __build.gradle                      | :mode         | android-mode      |          |                 |
-| /src/.+\.java$          | :mode         | java-mode                           |               |                   |          |                 |
+| /src/.+\.java$        | :mode         | java-mode                           |               |                   |          |                 |
 | /package\.json$       | :trigger      | __package.json                      | :mode         | json-mode         |          |                 |
 | /bower\.json$         | :trigger      | __bower.json                        | :mode         | json-mode         |          |                 |
 | /gulpfile\.js$        | :trigger      | __gulpfile.js                       | :mode         | js-mode           |          |                 |
@@ -1389,7 +1479,7 @@ either that, or just specify options for stuff that needs it
 | \.class\.php$         | :trigger      | __.class.php                        | :mode         | php-mode          |          |                 |
 | php-mode              |               |                                     |               |                   |          |                 |
 | python-mode           |               |                                     |               |                   |          |                 |
-| /lib/.+\.rb$            | :trigger      | __module                            | :mode         | ruby-mode         | :project | t               |
+| /lib/.+\.rb$          | :trigger      | __module                            | :mode         | ruby-mode         | :project | t               |
 | /spec_helper\.rb$     | :trigger      | __helper                            | :mode         | rspec-mode        | :project | t               |
 | _spec\.rb$            | :mode         | rspec-mode                          | :project      | t                 |          |                 |
 | /\.rspec$             | :trigger      | __.rspec                            | :mode         | rspec-mode        | :project | t               |
@@ -1569,7 +1659,7 @@ gangster swagger
 #+begin_src emacs-lisp
 (use-package! graphviz-dot-mode
   :commands graphviz-dot-mode
-  :mode ("\\.dot\\'" . graphviz-dot-mode)
+  :mode '("\\.dot\\'" . graphviz-dot-mode)
   :init
   (after! org
     (setcdr (assoc "dot" org-src-lang-modes)
