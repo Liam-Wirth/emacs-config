@@ -976,18 +976,27 @@ print
 (setq org-highlight-latex-and-related '(native script entities))
 (require 'org-src)
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
-(setq org-latex-preview-preamble
-      (concat
-       <<grab("latex-default-snippet-preamble")>>
-       "\n% Custom font\n\\usepackage{arev}\n\n"
-       ;<<grab("latex-maths-conveniences")>>))
-       ))
+;(setq org-latex-preview-preamble
+;      (concat
+;       <<grab("latex-default-snippet-preamble")>>
+;       "\n% Custom font\n\\usepackage{arev}\n\n"
+;       ;<<grab("latex-maths-conveniences")>>))
+;       ))
 #+end_src
+
+#+RESULTS:
+| latex | (:inherit default :extend t) |
+
 Defining our font size:
 #+begin_src emacs-lisp
 ;; Calibrated based on the TeX font and org-buffer font.
-(plist-put org-format-latex-options :zoom 0.93)
+(plist-put org-format-latex-options :zoom 4.93)
+(after! org (plist-put org-format-latex-options :scale 2.0))
 #+end_src
+
+#+RESULTS:
+| :foreground | default | :background | default | :scale | 2.0 | :html-foreground | Black | :html-background | Transparent | :html-scale | 1.0 | :matchers | (begin $1 $ $$ \( \[) | :zoom | 4.93 |
+
 ** Org-Roam
 #+begin_src emacs-lisp
 (after! org
@@ -1318,7 +1327,7 @@ the key to it looking *pretty*
   (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
   #+end_src
 #+RESULTS:
-| org-modern-mode | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+| org-modern-mode | turn-on-org-cdlatex | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
 
 *** Org-Modern hook
 #+begin_src emacs-lisp
