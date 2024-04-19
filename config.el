@@ -701,15 +701,15 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
 (setq org-highlight-latex-and-related '(native script entities))
 (require 'org-src)
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
-;(setq org-latex-preview-preamble
-;      (concat
-;       <<grab("latex-default-snippet-preamble")>>
-;       "\n% Custom font\n\\usepackage{arev}\n\n"
-;       ;<<grab("latex-maths-conveniences")>>))
-;       ))
+(setq org-latex-preview-preamble
+      (concat
+       <<grab("latex-default-snippet-preamble")>>
+       "\n% Custom font\n\\usepackage{arev}\n\n"
+       ;<<grab("latex-maths-conveniences")>>))
+       ))
 
 ;; Calibrated based on the TeX font and org-buffer font.
-(plist-put org-format-latex-options :zoom 4.93)
+(plist-put org-format-latex-options :zoom 1.93)
 (after! org (plist-put org-format-latex-options :scale 2.0))
 
 (after! org
