@@ -479,11 +479,23 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
       (switch-to-buffer "*Calculator*")
       (select-window main-window))))
 
+(after! org
 (setq org-fontify-quote-and-verse-blocks t)
 (setq org-highlight-latex-and-related '(native script entities))
 (setq org-agenda-files '("~/org/roam/dailies"))
 (require 'org-src)
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
+
+
+
+
+(defadvice org-export-output-file-name (before org-add-export-dir activate)
+  "Modifies org-export to place exported files in a different directory"
+  (when (not pub-dir)
+      (setq pub-dir "~/org/exported/")
+      (when (not (file-directory-p pub-dir))
+       (make-directory pub-dir))))
+)
 
 (defun nicer-org ()
   (progn
@@ -500,16 +512,28 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
   ))
 (add-hook! 'org-mode-hook  #'nicer-org)
 
+(map! :after org
+      :map org-mode-map
+      :localleader
+      :desc "Org-Mark-Ring jump" "gj" #'org-mark-ring-goto
+      )
+(map! :after org
+      :map org-mode-map
+      :localleader
+      :desc "Org-Mark-Ring Save" "gs" #'org-mark-ring-push)
+
 (defun open-temp-buffer-src ()
 "Open Temporary Buffer When Editing Src Blocks"
 (interactive)
 (org-edit-src-code)
 )
 
-(map! :map org-mode-map
+(map! :after org
+      :map org-mode-map
       :localleader
       :desc "Org Set Property" "O" #'org-set-property)
-(map! :map org-mode-map
+(map! :after org
+      :map org-mode-map
       :localleader
       :n "o" #'org-edit-src-code)
 
@@ -635,34 +659,34 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
    '(c . t)
    '(cpp . t)))
 
-(cl-defmacro lsp-org-babel-enable (lang)
-  "Support LANG in org source code block."
-  (setq centaur-lsp 'lsp-mode)
-  (cl-check-type lang string)
-  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-    `(progn
-       (defun ,intern-pre (info)
-         (let ((file-name (->> info caddr (alist-get :file))))
-           (unless file-name
-             (setq file-name (make-temp-file "babel-lsp-")))
-           (setq buffer-file-name file-name)
-           (lsp-deferred)))
-       (put ',intern-pre 'function-documentation
-            (format "Enable lsp-mode in the buffer of org source block (%s)."
-                    (upcase ,lang)))
-       (if (fboundp ',edit-pre)
-           (advice-add ',edit-pre :after ',intern-pre)
-         (progn
-           (defun ,edit-pre (info)
-             (,intern-pre info))
-           (put ',edit-pre 'function-documentation
-                (format "Prepare local buffer environment for org source block (%s)."
-                        (upcase ,lang))))))))
-(defvar org-babel-lang-list
-  '("go" "python" "ipython" "bash" "sh"))
-(dolist (lang org-babel-lang-list)
-  (eval `(lsp-org-babel-enable ,lang)))
+;;(cl-defmacro lsp-org-babel-enable (lang)
+;;  "Support LANG in org source code block."
+;;  (setq centaur-lsp 'lsp-mode)
+;;  (cl-check-type lang string)
+;;  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+;;         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+;;    `(progn
+;;       (defun ,intern-pre (info)
+;;         (let ((file-name (->> info caddr (alist-get :file))))
+;;           (unless file-name
+;;             (setq file-name (make-temp-file "babel-lsp-")))
+;;           (setq buffer-file-name file-name)
+;;           (lsp-deferred)))
+;;       (put ',intern-pre 'function-documentation
+;;            (format "Enable lsp-mode in the buffer of org source block (%s)."
+;;                    (upcase ,lang)))
+;;       (if (fboundp ',edit-pre)
+;;           (advice-add ',edit-pre :after ',intern-pre)
+;;         (progn
+;;           (defun ,edit-pre (info)
+;;             (,intern-pre info))
+;;           (put ',edit-pre 'function-documentation
+;;                (format "Prepare local buffer environment for org source block (%s)."
+;;                        (upcase ,lang))))))))
+;;(defvar org-babel-lang-list
+;;  '("go" "python" "ipython" "bash" "sh"))
+;;(dolist (lang org-babel-lang-list)
+;;  (eval `(lsp-org-babel-enable ,lang)))
 
 ;;(cl-defmacro lsp-org-babel-enable (lang)
 ;;  "Support LANG in org source code block."
@@ -823,6 +847,10 @@ Return nil otherwise."
       :localleader
       :desc "Outline" "O" #'org-ol-tree)
 
+(after! org 
+ (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
+ )
+
 ;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
 (setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
 
@@ -846,6 +874,55 @@ Return nil otherwise."
                               "\\setlength{\\cftbeforesecskip}{1ex}"
                               "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
                               "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}")))
+
+(after! org
+(require 'ox-latex)
+(unless (boundp 'org-latex-classes)
+  (setq org-latex-classes nil))
+(add-to-list 'org-latex-classes
+             '("article"
+               "\\documentclass{article}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+           "\\usepackage{tocloft}"
+           "\\setlength{\\cftbeforesecsckip}{1ex}"
+           "\\setlength{\\cftbeforesubsecskip{0.5ex}"
+           "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+           ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")
+           "\\newpage")
+"\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage{fixltx2e}
+\\usepackage{graphicx}
+\\usepackage{longtable}
+\\usepackage{float}
+\\usepackage{wrapfig}
+\\usepackage{rotating}
+\\usepackage[normalem]{ulem}
+\\usepackage{amsmath}
+\\usepackage{textcomp}
+\\usepackage{marvosym}
+\\usepackage{wasysym}
+\\usepackage{amssymb}
+\\usepackage{hyperref}
+\\usepackage{mathpazo}
+\\usepackage{color}
+\\usepackage{enumerate}
+\\definecolor{bg}{rgb}{0.95,0.95,0.95}
+\\tolerance=1000
+      [NO-DEFAULT-PACKAGES]
+      [PACKAGES]
+      [EXTRA]
+\\linespread{1.1}
+\\hypersetup{pdfborder=0 0 0}"
+
+                )
+
+    (setq org-latex-toc-command "\\tableofcontents\\newpage")
+  )
 
 (after! org
 (setq org-latex-classes
@@ -884,7 +961,7 @@ Return nil otherwise."
 
 (use-package! org-modern
   :ensure t
-  :hook '(org-mode . org-modern-mode)
+  :hook '(org . org-modern-mode)
   :config
   (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
         org-modern-table-vertical 1
@@ -957,9 +1034,16 @@ Return nil otherwise."
 
 (add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
 
+(defun insert-previous-daily-link ()
+  "Insert link to the previous daily note, if available."
+  (interactive)
+  (let ((prev-note (org-roam-dailies-find-previous-note)))
+    (when prev-note
+      (insert (format "[[%s][Previous Daily Note]]\n" prev-note)))))
+
 (setq org-roam-dailies-capture-templates
           (let ((head
-                 (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n* Daily Overview\n"
+                 (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n#+filetags: Dailies\n* Daily Overview\n"
                          "#+begin_src emacs-lisp :results value raw\n"
                          "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
                          "#+end_src\n"

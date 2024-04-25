@@ -664,15 +664,29 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
 the swag
 ** Org Variables
 #+begin_src emacs-lisp
+(after! org
 (setq org-fontify-quote-and-verse-blocks t)
 (setq org-highlight-latex-and-related '(native script entities))
 (setq org-agenda-files '("~/org/roam/dailies"))
 (require 'org-src)
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
+
+
+
+
+(defadvice org-export-output-file-name (before org-add-export-dir activate)
+  "Modifies org-export to place exported files in a different directory"
+  (when (not pub-dir)
+      (setq pub-dir "~/org/exported/")
+      (when (not (file-directory-p pub-dir))
+       (make-directory pub-dir))))
+)
 #+end_src
 
+
+
 #+RESULTS:
-| latex | (:inherit default :extend t) |
+: org-export-output-file-name
 
 *** Hooks
 #+begin_src emacs-lisp
@@ -694,7 +708,23 @@ the swag
 
 #+RESULTS:
 
-** A silly little keybind idea
+** Keybinds
+*** TODO General
+#+begin_src emacs-lisp
+(map! :after org
+      :map org-mode-map
+      :localleader
+      :desc "Org-Mark-Ring jump" "gj" #'org-mark-ring-goto
+      )
+(map! :after org
+      :map org-mode-map
+      :localleader
+      :desc "Org-Mark-Ring Save" "gs" #'org-mark-ring-push)
+#+end_src
+
+#+RESULTS:
+
+*** A silly little keybind idea
 open up a custom little swag baby gangster type thing whenever I hit a keybind while in a src block to enter a temp buffer
 #+begin_src emacs-lisp
 (defun open-temp-buffer-src ()
@@ -708,11 +738,14 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
 : open-temp-buffer-src
 
 
+
 #+begin_src emacs-lisp
-(map! :map org-mode-map
+(map! :after org
+      :map org-mode-map
       :localleader
       :desc "Org Set Property" "O" #'org-set-property)
-(map! :map org-mode-map
+(map! :after org
+      :map org-mode-map
       :localleader
       :n "o" #'org-edit-src-code)
 #+end_src
@@ -734,6 +767,10 @@ we want them bigger than text
 (custom-set-faces!
   '(org-document-title :height 2.0))
 #+end_src
+
+#+RESULTS:
+| doom--customize-themes-h-214 |
+
 *** Text Prefixes?
 #+begin_src emacs-lisp
 (defadvice! +org-indent--reduced-text-prefixes ()
@@ -752,6 +789,8 @@ we want them bigger than text
                           "\u200b"))
                 nil 'face 'org-indent)))))
 #+end_src
+
+#+RESULTS:
 
 *** Spell-Fu
 #+begin_src emacs-lisp
@@ -889,42 +928,38 @@ we want them bigger than text
 *** LSP Org-Babel-Enable (Doesn't Work?)
 trying something
 #+begin_src emacs-lisp
-(cl-defmacro lsp-org-babel-enable (lang)
-  "Support LANG in org source code block."
-  (setq centaur-lsp 'lsp-mode)
-  (cl-check-type lang string)
-  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-    `(progn
-       (defun ,intern-pre (info)
-         (let ((file-name (->> info caddr (alist-get :file))))
-           (unless file-name
-             (setq file-name (make-temp-file "babel-lsp-")))
-           (setq buffer-file-name file-name)
-           (lsp-deferred)))
-       (put ',intern-pre 'function-documentation
-            (format "Enable lsp-mode in the buffer of org source block (%s)."
-                    (upcase ,lang)))
-       (if (fboundp ',edit-pre)
-           (advice-add ',edit-pre :after ',intern-pre)
-         (progn
-           (defun ,edit-pre (info)
-             (,intern-pre info))
-           (put ',edit-pre 'function-documentation
-                (format "Prepare local buffer environment for org source block (%s)."
-                        (upcase ,lang))))))))
-(defvar org-babel-lang-list
-  '("go" "python" "ipython" "bash" "sh"))
-(dolist (lang org-babel-lang-list)
-  (eval `(lsp-org-babel-enable ,lang)))
+;;(cl-defmacro lsp-org-babel-enable (lang)
+;;  "Support LANG in org source code block."
+;;  (setq centaur-lsp 'lsp-mode)
+;;  (cl-check-type lang string)
+;;  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+;;         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+;;    `(progn
+;;       (defun ,intern-pre (info)
+;;         (let ((file-name (->> info caddr (alist-get :file))))
+;;           (unless file-name
+;;             (setq file-name (make-temp-file "babel-lsp-")))
+;;           (setq buffer-file-name file-name)
+;;           (lsp-deferred)))
+;;       (put ',intern-pre 'function-documentation
+;;            (format "Enable lsp-mode in the buffer of org source block (%s)."
+;;                    (upcase ,lang)))
+;;       (if (fboundp ',edit-pre)
+;;           (advice-add ',edit-pre :after ',intern-pre)
+;;         (progn
+;;           (defun ,edit-pre (info)
+;;             (,intern-pre info))
+;;           (put ',edit-pre 'function-documentation
+;;                (format "Prepare local buffer environment for org source block (%s)."
+;;                        (upcase ,lang))))))))
+;;(defvar org-babel-lang-list
+;;  '("go" "python" "ipython" "bash" "sh"))
+;;(dolist (lang org-babel-lang-list)
+;;  (eval `(lsp-org-babel-enable ,lang)))
 #+end_src
 
 #+RESULTS:
 
-
-#+begin_src python :tangle "test.py"
-print
-#+end_src
 
 #+RESULTS:
 | (closure (t) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | lsp-deferred | nicer-org | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | turn-on-org-cdlatex | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | org-appear-mode | org-modern-mode | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
@@ -1034,7 +1069,11 @@ I don't understand this plugin as much as I should tbh
                                           (search-forward "]{")
                                           (point))))
     ('keyword (string-match-p "^header-args" (org-element-property :value (org-element-context))))))
+
 #+end_src
+
+#+RESULTS:
+: +yas/org-src-header-p
 
 **** More Src-Header Stuff
 #+begin_src emacs-lisp
@@ -1081,6 +1120,7 @@ Return nil otherwise."
       ('keyword (when (string-match "^header-args:\\([^ ]+\\)" (org-element-property :value context))
                   (match-string 1 (org-element-property :value context)))))))
 #+end_src
+
 **** Last Lang Used
 #+begin_src emacs-lisp
 (defun +yas/org-last-src-lang ()
@@ -1115,7 +1155,7 @@ Return nil otherwise."
     (car (cl-set-difference src-langs header-langs :test #'string=))))
 
 #+end_src
-** Org tree
+** TODO Org tree
 #+begin_src emacs-lisp
 (use-package! org-ol-tree
   :commands org-ol-tree
@@ -1134,31 +1174,19 @@ Return nil otherwise."
 #+end_src
 ** Capture
 ** Exporting
-*** Latex
-#+name: latex-hanging-secnum
-#+begin_src LaTeX :tangle no
-\renewcommand\sectionformat{\llap{\thesection\autodot\enskip}}
-\renewcommand\subsectionformat{\llap{\thesubsection\autodot\enskip}}
-\renewcommand\subsubsectionformat{\llap{\thesubsubsection\autodot\enskip}}
-#+end_src
 
-It can also be nice to have big =\chapter=​s.
-#+name: latex-big-chapter
-#+begin_src LaTeX :tangle no
-\RedeclareSectionCommand[afterindent=false, beforeskip=0pt, afterskip=0pt, innerskip=0pt]{chapter}
-\setkomafont{chapter}{\normalfont}
-\renewcommand*{\chapterheadstartvskip}{\vspace*{0\baselineskip}}
-\renewcommand*{\chapterheadendvskip}{\vspace*{0\baselineskip}}
-\renewcommand*{\chapterformat}{%
-  \fontsize{60}{30}\selectfont\rlap{\hspace{6pt}\thechapter}}
-\renewcommand*\chapterlinesformat[3]{%
-  \parbox[b]{\dimexpr\textwidth-0.5em\relax}{%
-    \raggedleft{{\large\scshape\bfseries\chapapp}\vspace{-0.5ex}\par\Huge#3}}%
-    \hfill\makebox[0pt][l]{#2}}
+*** Org Export Backends:
+yanked this from my .custom thing cause I want it to setup here
+#+begin_src emacs-lisp 
+(after! org 
+ (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
+ )
 #+end_src
 
 #+RESULTS:
+| ascii | beamer | html | icalendar | latex | man | md | odt |
 
+*** Latex
 **** Compiling
 smart emacs guy says latexmk + biber is better so uhh, whatever you say boss!
 #+begin_src emacs-lisp
@@ -1170,7 +1198,7 @@ smart emacs guy says latexmk + biber is better so uhh, whatever you say boss!
 | LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f |
 
 
-**** Nicer Checkboxes
+****** Nicer Checkboxes
 #+begin_src emacs-lisp
 (defun +org-export-latex-fancy-item-checkboxes (text backend info)
   (when (org-export-derived-backend-p backend 'latex)
@@ -1201,8 +1229,60 @@ smart emacs guy says latexmk + biber is better so uhh, whatever you say boss!
                               "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}")))
 #+end_src
 
+#+begin_src emacs-lisp
+(after! org
+(require 'ox-latex)
+(unless (boundp 'org-latex-classes)
+  (setq org-latex-classes nil))
+(add-to-list 'org-latex-classes
+             '("article"
+               "\\documentclass{article}"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
+           "\\usepackage{tocloft}"
+           "\\setlength{\\cftbeforesecsckip}{1ex}"
+           "\\setlength{\\cftbeforesubsecskip{0.5ex}"
+           "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+           ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")
+           "\\newpage")
+"\\usepackage[utf8]{inputenc}
+\\usepackage[T1]{fontenc}
+\\usepackage{fixltx2e}
+\\usepackage{graphicx}
+\\usepackage{longtable}
+\\usepackage{float}
+\\usepackage{wrapfig}
+\\usepackage{rotating}
+\\usepackage[normalem]{ulem}
+\\usepackage{amsmath}
+\\usepackage{textcomp}
+\\usepackage{marvosym}
+\\usepackage{wasysym}
+\\usepackage{amssymb}
+\\usepackage{hyperref}
+\\usepackage{mathpazo}
+\\usepackage{color}
+\\usepackage{enumerate}
+\\definecolor{bg}{rgb}{0.95,0.95,0.95}
+\\tolerance=1000
+      [NO-DEFAULT-PACKAGES]
+      [PACKAGES]
+      [EXTRA]
+\\linespread{1.1}
+\\hypersetup{pdfborder=0 0 0}"
+
+                )
+
+    (setq org-latex-toc-command "\\tableofcontents\\newpage")
+  )
+
+
+#+end_src
 #+RESULTS:
-| \usepackage{tocloft} | \setlength{\cftbeforesecskip}{1ex} | \setlength{\cftbeforesubsecskip}{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} |
+: \tableofcontents\newpage
 #+begin_src emacs-lisp
 (after! org
 (setq org-latex-classes
@@ -1255,7 +1335,7 @@ the key to it looking *pretty*
 #+begin_src emacs-lisp :tangle yes
 (use-package! org-modern
   :ensure t
-  :hook '(org-mode . org-modern-mode)
+  :hook '(org . org-modern-mode)
   :config
   (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
         org-modern-table-vertical 1
@@ -1326,24 +1406,37 @@ the key to it looking *pretty*
           ("results" . "🠶")))
   (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
   #+end_src
-#+RESULTS:
-| org-modern-mode | turn-on-org-cdlatex | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
 
 *** Org-Modern hook
 #+begin_src emacs-lisp
 (add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
 #+end_src
 
-#+RESULTS:
-| (lambda nil (org-modern-mode 1)) | org-modern-mode | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
-
-** Org-Agenda
+** Org-Agenda and Dailies
 *** Define My Daily Template:
+**** TODO implement function that will link to last daily node
+#+begin_src emacs-lisp
+(defun insert-previous-daily-link ()
+  "Insert link to the previous daily note, if available."
+  (interactive)
+  (let ((prev-note (org-roam-dailies-find-previous-note)))
+    (when prev-note
+      (insert (format "[[%s][Previous Daily Note]]\n" prev-note)))))
+#+end_src
+
+
+#+RESULTS:
+: insert-previous-daily-link
+
+search through roam/dailies directory \to find most recently created node (by date) and insert link to that node at the top of the created daily file
+
+Also, fix this such that it actually works, cause I had to open my config and c-c-c-c this to make it work
+
 
 #+begin_src emacs-lisp
 (setq org-roam-dailies-capture-templates
           (let ((head
-                 (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n* Daily Overview\n"
+                 (concat "#+title: %<%Y-%m-%d (%A)>\n#+startup: showall\n#+filetags: Dailies\n* Daily Overview\n"
                          "#+begin_src emacs-lisp :results value raw\n"
                          "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
                          "#+end_src\n"
@@ -1409,7 +1502,7 @@ Hello
 #+RESULTS:
 : as/get-daily-agenda
 
-*** Tell Org-Agenda About The Custom CommandS
+*** Tell Org-Agenda About The Custom Commands
 #+begin_src emacs-lisp
 ;; Customize the default Org agenda command to include Org Roam daily files
 (setq org-agenda-custom-commands
