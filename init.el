@@ -25,7 +25,7 @@
        company            ; the ultimate code completion backend
        ;; helm              ; the *other* search engine for love and life
        ;; ;;ido               ; the other *other* search engine...
-       ;(ivy + fonts + childframe)
+                                        ;(ivy + fonts + childframe)
                                         ; a search engine for love and life
        (vertico +icons)
                                         ; the search engine of the future
@@ -63,7 +63,7 @@
        (format +onsave)  ; automated prettiness
        ;;god               ; run Emacs commands without modifier keys
        ;;lispy             ; vim for lisp, for people who don't like vim
-       ;;multiple-cursors  ; editing in many places at once
+       multiple-cursors  ; editing in many places at once
        ;;objed             ; text object editing for the innocent
        ;;parinfer          ; turn lisp into python, sort of
        ;;rotate-text       ; cycle region at point between text candidates
@@ -120,8 +120,7 @@
        :lang
        ;;agda              ; types of types of types of types...
        ;;beancount         ; mind the GAAP
-       ;; (cc +lsp)
-                                        ; C > C++ == 1
+       (cc +lsp)            ; C > C++ == 1
        ;;clojure           ; java with a lisp
        ;;common-lisp       ; if you've seen one lisp, you've seen them all
        ;;coq               ; proofs-as-programs
@@ -159,7 +158,7 @@
        ;;lean              ; for folks with too much to prove
        ;;ledger            ; be audit you can be
        lua               ; one-based indices? one-based indices
-       ;;markdown          ; writing docs for people to ignore
+       markdown          ; writing docs for people to ignore
        ;;nim               ; python + lisp at the speed of c
        ;;nix               ; I hereby declare "nix geht mehr!"
        ;;ocaml             ; an objective camel
@@ -191,7 +190,7 @@
        ;;solidity          ; do you need a blockchain? No.
        ;;swift             ; who asked for emoji variables?
        ;;terra             ; Earth and Moon in alignment for performance.
-       ;;web               ; the tubes
+       (web +lsp)           ; the tubes
        ;;yaml              ; JSON, but readable
        ;;zig               ; C, but simpler
 

@@ -1,5 +1,3 @@
-
-
 #+title: Liams Emacs Config
 #+PROPERTY: header-args :tangle ~/.config/doom/config.el
 #+latex_class: report
@@ -14,18 +12,17 @@ huuuuge shoutout to this gangster, I basically nabbed like 95 percent of my conf
 
 * TODO Emacs config
 TODO: Fix the following
-1. Control + / - zooming does not work
-2. LSP Broken
-3. Figure out how to properly set up dictionary
-4. Org mode load times absurdly long
+1. LSP Broken
+2. Figure out how to properly set up dictionary
+3. Org mode load times absurdly long
    a. The code blocks / stuff I configured for org modern, and the org bigger headlines aren't at all working, likely something in my cfg BEFORE that is breaking it
    b. Furthermore, look into why the Latex fragments aren't correctly rendering the trees (as seen in the)[[org:roam/20240324021855-predicate_logic_as_a_formal_language.org][ Predicate Logic]] notes
    c. lsp in org src blocks still non-existent
    d. Doom modeline not working
-5. Configure the symbols that you want to use properly
-6. Set up ORG-TOC, or find some sort of outline view that I can use to jump around headings of a larger org file like this
-7. fix the minimap, cause it looks like ass and has linespacing that is wayyyy too large
-8. See if I can rebind the stuff that is under ctrl-h, ctrl-j, c-k, and c-l to be more like my vim config, where those keybinds move you to the different views you have open if your window is split
+4. Configure the symbols that you want to use properly
+5. Set up ORG-TOC, or find some sort of outline view that I can use to jump around headings of a larger org file like this
+6. fix the minimap, cause it looks like ass and has linespacing that is wayyyy too large
+7. See if I can rebind the stuff that is under ctrl-h, ctrl-j, c-k, and c-l to be more like my vim config, where those keybinds move you to the different views you have open if your window is split
 
 
 
@@ -36,7 +33,7 @@ TODO: Fix the following
 
 * Config Boilerplate
 ** Telling Emacs who I am (they are in my skin)
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_SRC emacs-lisp :tangle yes
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets. It is optional.
  (setq user-full-name "Liam Wirth"
@@ -50,7 +47,7 @@ TODO: Fix the following
 #+END_SRC
 
 #+RESULTS:
-| ~/org/roam/daily |
+| ~/org/roam/daily/ |
 
 ** Leftover block from the original config.el file, has some helpful reminders so I'll keep it
 #+BEGIN_SRC emacs-lisp
@@ -235,12 +232,20 @@ To See stuff responsible for org mode look and feel, see:
 (setq doom-theme 'doom-gruvbox)
 (setq display-line-numbers-type 'relative)
 #+end_src
+
+#+RESULTS:
+: relative
+
 ** +Action+! Variables relevant to look and feel!
 #+begin_src emacs-lisp
 (blink-cursor-mode -1)
 (column-number-mode t)
 (transient-mark-mode t)
 #+end_src
+
+#+RESULTS:
+: t
+
 ** Doom Modeline
 #+begin_src emacs-lisp
 (after! doom-modeline
@@ -422,6 +427,10 @@ it's like the one from neovim? (or is it the other way around?)
    ))
 (setq which-key-allow-multiple-replacements t)
 #+end_src
+
+#+RESULTS:
+: t
+
 ** KeyCast
 neat little plugin I might never use, but cool to have
 #+begin_src emacs-lisp
@@ -769,7 +778,7 @@ we want them bigger than text
 #+end_src
 
 #+RESULTS:
-| doom--customize-themes-h-214 |
+| doom--customize-themes-h-59 |
 
 *** Text Prefixes?
 #+begin_src emacs-lisp
@@ -797,6 +806,9 @@ we want them bigger than text
 (after! spell-fu
   (cl-pushnew 'org-modern-tag (alist-get 'org-mode +spell-excluded-faces-alist)))
 #+end_src
+
+#+RESULTS:
+
 *** Org-Ellipsis
 #+begin_src emacs-lisp
 (setq org-ellipsis " ▾ "
@@ -827,6 +839,7 @@ we want them bigger than text
 #+end_src
 
 #+RESULTS:
+| :name | » | :src_block | » | :src_block_end | « | :quote | “ | :quote_end | ” | :lambda | λ  | :def | ƒ | :composition | ∘ | :map | ↦ | :null | ∅ | :true | 𝕋 | :false | 𝔽 | :int | ℤ | :float | ℝ | :str | 𝕊 | :bool | 𝔹 | :list | 𝕃 | :not | ￢ | :in | ∈ | :not-in | ∉ | :and | ∧ | :or | ∨ | :for | ∀ | :some | ∃ | :return | ⟼ | :yield | ⟻ | :union | ⋃ | :intersect | ∩ | :diff | ∖ | :tuple | ⨂ | :pipe |  | :dot | • | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇  | :priority_e | ❓ |
 
 *** TODO figure out what to call this header
 #+begin_src emacs-lisp
@@ -1030,7 +1043,7 @@ Defining our font size:
 #+end_src
 
 #+RESULTS:
-| :foreground | default | :background | default | :scale | 2.0 | :html-foreground | Black | :html-background | Transparent | :html-scale | 1.0 | :matchers | (begin $1 $ $$ \( \[) | :zoom | 4.93 |
+| :foreground | default | :background | default | :scale | 2.0 | :html-foreground | Black | :html-background | Transparent | :html-scale | 1.0 | :matchers | (begin $1 $ $$ \( \[) | :zoom | 1.93 |
 
 ** Org-Roam
 #+begin_src emacs-lisp
@@ -1053,6 +1066,9 @@ Defining our font size:
        (subst-char-in-string ?_ ?  buffer-file-name))
     (funcall orig-fun)))
 #+end_src
+
+#+RESULTS:
+
 *** Yasssss
 I don't understand this plugin as much as I should tbh
 ****  Src-Header stuff
@@ -1172,6 +1188,9 @@ Return nil otherwise."
       :localleader
       :desc "Outline" "O" #'org-ol-tree)
 #+end_src
+
+#+RESULTS:
+
 ** Capture
 ** Exporting
 
@@ -1407,10 +1426,16 @@ the key to it looking *pretty*
   (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
   #+end_src
 
+  #+RESULTS:
+  | org-modern-mode |
+
 *** Org-Modern hook
 #+begin_src emacs-lisp
 (add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
 #+end_src
+
+#+RESULTS:
+| (lambda nil (org-modern-mode 1)) | turn-on-org-cdlatex | org-appear-mode | nicer-org | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
 
 ** Org-Agenda and Dailies
 *** Define My Daily Template:

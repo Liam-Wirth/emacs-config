@@ -1,14 +1,3 @@
-;; Some functionality uses this to identify you, e.g. GPG configuration, email
-;; clients, file templates and snippets. It is optional.
- (setq user-full-name "Liam Wirth"
-       user-mail-address "ltwirth@asu.edu")
-
-
-;; If you use `org' and don't want your org files in the default location below,
-;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
-(setq org-agenda-files '("~/org/roam/daily/"))
-
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
 ;;
@@ -958,79 +947,6 @@ Return nil otherwise."
   citecolor=cite
 }
 \urlstyle{same}
-
-(use-package! org-modern
-  :ensure t
-  :hook '(org . org-modern-mode)
-  :config
-  (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
-        org-modern-table-vertical 1
-        org-modern-table-horizontal 0.2
-        org-modern-list '((43 . "➤")
-                          (45 . "–")
-                          (42 . "•"))
-        org-modern-todo-faces
-        '(("TODO" :inverse-video t :inherit org-todo)
-          ("PROJ" :inverse-video t :inherit +org-todo-project)
-          ("STRT" :inverse-video t :inherit +org-todo-active)
-          ("[-]"  :inverse-video t :inherit +org-todo-active)
-          ("HOLD" :inverse-video t :inherit +org-todo-onhold)
-          ("WAIT" :inverse-video t :inherit +org-todo-onhold)
-          ("[?]"  :inverse-video t :inherit +org-todo-onhold)
-          ("KILL" :inverse-video t :inherit +org-todo-cancel)
-          ("NO"   :inverse-video t :inherit +org-todo-cancel))
-        org-modern-footnote
-        (cons nil (cadr org-script-display))
-        org-modern-block-fringe nil
-        org-modern-block-name
-        '((t . t)
-          ("src" "»" "«")
-          ("example" "»–" "–«")
-          ("quote" "❝" "❞")
-          ("export" "⏩" "⏪"))
-        org-modern-progress nil
-        org-modern-priority nil
-        org-modern-horizontal-rule (make-string 36 ?─)
-        org-modern-keyword
-        '((t . t)
-          ("title" . "𝙏")
-          ("subtitle" . "𝙩")
-          ("author" . "𝘼")
-          ("email" . #("" 0 1 (display (raise -0.14))))
-          ("date" . "𝘿")
-          ("property" . "☸")
-          ("options" . "⌥")
-          ("startup" . "⏻")
-          ("macro" . "𝓜")
-          ("bind" . #("" 0 1 (display (raise -0.1))))
-          ("bibliography" . "")
-          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
-          ("cite_export" . "⮭")
-          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
-          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
-          ("include" . "⇤")
-          ("setupfile" . "⇚")
-          ("html_head" . "🅷")
-          ("html" . "🅗")
-          ("latex_class" . "🄻")
-          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
-          ("latex_header" . "🅻")
-          ("latex_header_extra" . "🅻⁺")
-          ("latex" . "🅛")
-          ("beamer_theme" . "🄱")
-          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
-          ("beamer_font_theme" . "🄱𝐀")
-          ("beamer_header" . "🅱")
-          ("beamer" . "🅑")
-          ("attr_latex" . "🄛")
-          ("attr_html" . "🄗")
-          ("attr_org" . "⒪")
-          ("call" . #("" 0 1 (display (raise -0.15))))
-          ("name" . "⁍")
-          ("header" . "›")
-          ("caption" . "☰")
-          ("results" . "🠶")))
-  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
 
 (add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
 
