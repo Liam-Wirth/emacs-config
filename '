@@ -1,7 +1,10 @@
-#+PROPERTY: header-args :tangle ~/.config/doom/config.el :results replace :exports code :tangle yes
+#+title: Liams Emacs Config
+#+PROPERTY: header-args :tangle ~/.config/doom/config.el
 #+latex_class: report
 #+options: coverpage:yes
 #+startup: fold
+#+property: header-args:emacs-lisp
+#+property: header-args:elisp :results replace :exports code
 #+options: coverpage:yes
 #+startup: fold
 
@@ -29,6 +32,26 @@ TODO: Fix the following
 another helpful config I found recently:
 [[https://hieuphay.com/doom-emacs-config/][another one]]
 
+
+* Config Boilerplate
+** Telling Emacs who I am (they are in my skin)
+#+BEGIN_SRC emacs-lisp :tangle yes
+;; Some functionality uses this to identify you, e.g. GPG configuration, email
+;; clients, file templates and snippets. It is optional.
+ (setq user-full-name "Liam Wirth"
+       user-mail-address "ltwirth@asu.edu")
+
+
+;; If you use `org' and don't want your org files in the default location below,
+;; change `org-directory'. It must be set before org loads!
+(setq org-directory "~/org/")
+;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
+;; I thought to myself "why not try to combine the two?"
+(setq org-agenda-files '("~/org/roam/daily/"))
+#+END_SRC
+
+#+RESULTS:
+| ~/org/roam/daily/ |
 
 ** Leftover block from the original config.el file, has some helpful reminders so I'll keep it
 #+BEGIN_SRC emacs-lisp
@@ -66,26 +89,7 @@ another helpful config I found recently:
 #+END_SRC
 
 #+RESULTS:
-* Config Boilerplate
-** Telling Emacs who I am (they are in my skin)
-#+BEGIN_SRC emacs-lisp 
-;; Some functionality uses this to identify you, e.g. GPG configuration, email
-;; clients, file templates and snippets. It is optional.
- (setq user-full-name "Liam Wirth"
-       user-mail-address "ltwirth@asu.edu")
-
-
-;; If you use `org' and don't want your org files in the default location below,
-;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
-;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
-;; I thought to myself "why not try to combine the two?"
-(setq org-agenda-files '("~/org/roam/daily/"))
-#+END_SRC
-
-#+RESULTS:
-| ~/org/roam/daily/ |
-
+* Default Variables and misc
 *** Cache and such?
 #+begin_src emacs-lisp
 (unless (file-exists-p (expand-file-name "persp" doom-cache-dir))
@@ -102,6 +106,16 @@ another helpful config I found recently:
 
 
 #+end_src
+*** Not sure where to categorize these
+#+begin_src emacs-lisp
+#+end_src
+
+#+RESULTS:
+: 1
+
+#+RESULTS:
+: 1
+
 *** Epic Sauce Defaults
 #+begin_src emacs-lisp
 (setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
@@ -111,16 +125,14 @@ another helpful config I found recently:
       password-cache-expiry nil                   ; I can trust my computers ... can't I?
       scroll-preserve-screen-position 'always     ; Don't have `point' jump around
       scroll-margin 2                             ; It's nice to maintain a little margin
-      display-time-default-load-average nil       ; I don't think I've ever found this useful
-      display-line-numbers-type 'relative         ; RelNum ON TOP
-      )
-
+      display-time-default-load-average nil)      ; I don't think I've ever found this useful
 
 (display-time-mode 1)                             ; Enable time in the mode-line
 (global-subword-mode 1)                           ; Iterate through CamelCase words
 (pixel-scroll-precision-mode t)                   ; Turn on pixel scrolling
 
 
+(setq-default abbrev-mode t)
 
 (setq-default
  delete-by-moving-to-trash t                      ; Delete files to trash
@@ -132,36 +144,16 @@ another helpful config I found recently:
 #+end_src
 
 #+RESULTS:
-Its stupid to me that doom wont start in fullscreen by default
+: t
+
+*** Adding things to list?
 #+begin_src emacs-lisp
-(add-to-list 'default-frame-alist '(width . 92))
-(add-to-list 'default-frame-alist '(height . 40))
+(add-to-list 'default-frame-alist '(height . 24))
+(add-to-list 'default-frame-alist '(width . 80))
 #+end_src
 
-if you for some unholy reason want to split the window to the left, or above when there's only one window open,
-you're a psychopath here, I am setting things up to NOT do that
-#+begin_src emacs-lisp
-(setq evil-vsplit-window-right t
-      evil-split-window-below t)
-#+end_src
-
-frame title stuff, stolen straight from that second config thing I found, looks interesting, might keep, might not
-
-#+begin_src emacs-lisp :results none
-(setq frame-title-format
-      '(""
-        (:eval
-         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-             (replace-regexp-in-string
-              ".*/[0-9]*-?" "☰ "
-              (subst-char-in-string ?_ ?  buffer-file-name))
-           "%b"))
-        (:eval
-         (let ((project-name (projectile-project-name)))
-           (unless (string= "-" project-name)
-             (format (if (buffer-modified-p)  " ◉ %s" "  ●  %s") project-name))))))
-#+end_src
-
+#+RESULTS:
+: ((buffer-predicate . doom-buffer-frame-predicate) (right-divider-width . 1) (bottom-divider-width . 1) (font . JetBrains Mono-15) (width . 80) (height . 24) (vertical-scroll-bars) (tool-bar-lines . 0) (menu-bar-lines . 0) (left-fringe . 8) (right-fringe . 8))
 
 *** Setting up the custom-file (to be used sparingly)
 #+begin_src emacs-lisp
@@ -173,6 +165,14 @@ frame title stuff, stolen straight from that second config thing I found, looks 
 #+RESULTS:
 : t
 
+** Evil Mode Window Management
+*** Default splitting direction
+if you for some unholy reason want to split the window to the left, or above when there's only one window open,
+you're a psychopath
+#+begin_src emacs-lisp
+(setq evil-vsplit-window-right t
+      evil-split-window-below t)
+#+end_src
 
 #+RESULTS:
 : t
@@ -213,7 +213,7 @@ good ol keybinds and such
 #+RESULTS:
 
 ** Hippie Expand stuff
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 (global-set-key [remap dabbrev-expand] #'hippie-expand)
 (setq hippie-expand-try-functions-list
       '(try-complete-file-name-partially
@@ -227,10 +227,6 @@ good ol keybinds and such
         try-complete-lisp-symbol-partially
         try-complete-lisp-symbol))
 #+end_src
-
-#+RESULTS:
-| try-complete-file-name-partially | try-complete-file-name | try-expand-all-abbrevs | try-expand-list | try-expand-dabbrev | try-expand-dabbrev-all-buffers | try-expand-dabbrev-from-kill | try-expand-line | try-complete-lisp-symbol-partially | try-complete-lisp-symbol |
-
 * Looks
 I intend to configure the overal look and feel of my emacs configuration here, as well as any packages/modules that would affect how it looks and feels
 I.E
@@ -240,7 +236,7 @@ To See stuff responsible for org mode look and feel, see:
 + [[Org Look and Feel]]
 
 ** Font!
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
 ;; - `doom-font' -- the primary font to use
@@ -277,13 +273,13 @@ To See stuff responsible for org mode look and feel, see:
 #+RESULTS:
 : 0.05
 
-#+RESULTS:
-| [\(?:\*?[=+>]\) 0 font-shape-gstring] |
+#+begin_src emacs-lisp
 
+#+end_src
 ** Theme!
-#+begin_src emacs-lisp 
-(setq doom-theme 'doom-gruvbox
-      doom-themes-treemacs-enable-variable-pitch nil)
+#+begin_src emacs-lisp
+(setq doom-theme 'doom-gruvbox)
+(setq display-line-numbers-type 'relative)
 #+end_src
 
 #+RESULTS:
@@ -304,7 +300,6 @@ To See stuff responsible for org mode look and feel, see:
 (after! doom-modeline
   (setq doom-modeline-enable-word-count t)
   (setq doom-modeline-icon t)
-  (setq doom-modeline-persp-name t)
   (setq doom-modeline-height 45)
   (setq doom-modeline-lsp-icon t)
   (setq doom-modeline-total-line-number t)
@@ -473,7 +468,7 @@ I still have little to no clue how emacs window management works
 * Configuring Plugins (Misc)
 ** Which-Key
 it's like the one from neovim? (or is it the other way around?)
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 (after! which-key
   (setq which-key-idle-delay 0.2))
 
@@ -489,9 +484,31 @@ it's like the one from neovim? (or is it the other way around?)
 #+RESULTS:
 : t
 
+** KeyCast
+neat little plugin I might never use, but cool to have
+#+begin_src emacs-lisp
+;; (use-package keycast
+;;   :commands keycast-mode
+;;   :config
+;;   (define-minor-mode keycast-mode
+;;     "Show current command and its key binding in the mode line."
+;;     :global t
+;;     (if keycast-mode
+;;         (progn
+;;           (add-hook 'pre-command-hook 'keycast--update t)
+;;           (add-to-list 'global-mode-string '("" mode-line-keycast " ")))
+;;       (remove-hook 'pre-command-hook 'keycast--update)
+;;       (setq global-mode-string (remove '("" mode-line-keycast " ") global-mode-string))))
+;;   (custom-set-faces!
+;;     '(keycast-command :inherit doom-modeline-debug
+;;       :height 0.9)
+;;     '(keycast-key :inherit custom-modified
+;;       :height 1.1
+;;       :weight bold)))
+#+end_src
 ** TODO Elcord
 everyone MUST KNOW I'M USING EMACS (as well as vim)
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 (use-package! elcord
   :commands elcord-mode
   :config
@@ -500,6 +517,74 @@ everyone MUST KNOW I'M USING EMACS (as well as vim)
 
 #+RESULTS:
 
+** CalcTeX
+this is broken FIXME:
+#+begin_src emacs-lisp
+;; (use-package! calctex
+;;   :commands calctex-mode
+;;   :init
+;;   (add-hook 'calc-mode-hook #'calctex-mode)
+;;   :config
+;; )
+#+end_src
+
+#+RESULTS:
+| calctex-mode |
+
+*** TODO KeyBinds?
+#+begin_src emacs-lisp
+;;(use-package! calctex
+;;  :commands calctex-mode
+;;  :init
+;;  (add-hook 'calc-mode-hook #'calctex-mode)
+;;  :config
+;;  (setq calctex-additional-latex-packages "
+;;\\usepackage[usenames]{xcolor}
+;;\\usepackage{soul}
+;;\\usepackage{adjustbox}
+;;\\usepackage{amsmath}
+;;\\usepackage{amssymb}
+;;\\usepackage{siunitx}
+;;\\usepackage{cancel}
+;;\\usepackage{mathtools}
+;;\\usepackage{mathalpha}
+;;\\usepackage{xparse}
+;;\\usepackage{arevmath}"
+;;        calctex-additional-latex-macros
+;;        (concat calctex-additional-latex-macros
+;;                "\n\\let\\evalto\\Rightarrow"))
+;;  (defadvice! no-messaging-a (orig-fn &rest args)
+;;    :around #'calctex-default-dispatching-render-process
+;;    (let ((inhibit-message t) message-log-max)
+;;      (apply orig-fn args)))
+;;  ;; Fix hardcoded dvichop path (whyyyyyyy)
+;;  (let ((vendor-folder (concat (file-truename doom-local-dir)
+;;                               "straight/"
+;;                               (format "build-%s" emacs-version)
+;;                               "/calctex/vendor/")))
+;;    (setq calctex-dvichop-sty (concat vendor-folder "texd/dvichop")
+;;          calctex-dvichop-bin (concat vendor-folder "texd/dvichop")))
+;;  (unless (file-exists-p calctex-dvichop-bin)
+;;    (message "CalcTeX: Building dvichop binary")
+;;    (let ((default-directory (file-name-directory calctex-dvichop-bin)))
+;;      (call-process "make" nil nil nil))))
+
+(map! :map calc-mode-map
+      :after calc
+      :localleader
+      :desc "Embedded calc (toggle)" "e" #'calc-embedded)
+(map! :map org-mode-map
+      :after org
+      :localleader
+      :desc "Embedded calc (toggle)" "E" #'calc-embedded)
+(map! :map latex-mode-map
+      :after latex
+      :localleader
+      :desc "Embedded calc (toggle)" "e" #'calc-embedded)
+(defvar calc-embedded-trail-window nil)
+(defvar calc-embedded-calculator-window nil)
+
+#+end_src
 ** Mixed Pitch
 *** Setting the Variable-Pitch Serrif Font
 #+begin_src emacs-lisp
@@ -555,6 +640,8 @@ everyone MUST KNOW I'M USING EMACS (as well as vim)
 #+RESULTS:
 ** Persp Mode
 This is largely for session management
+
+
 ** WriteWroom
 #+begin_src emacs-lisp
 (defvar +zen-serif-p t
@@ -608,10 +695,68 @@ This is largely for session management
 
 #+RESULTS:
 
+*** Something regarding calcs placement
+#+begin_src emacs-lisp
+(defadvice! calc-embedded-with-side-pannel (&rest _)
+  :after #'calc-do-embedded
+  (when calc-embedded-trail-window
+    (ignore-errors
+      (delete-window calc-embedded-trail-window))
+    (setq calc-embedded-trail-window nil))
+  (when calc-embedded-calculator-window
+    (ignore-errors
+      (delete-window calc-embedded-calculator-window))
+    (setq calc-embedded-calculator-window nil))
+  (when (and calc-embedded-info
+             (> (* (window-width) (window-height)) 1200))
+    (let ((main-window (selected-window))
+          (vertical-p (> (window-width) 80)))
+      (select-window
+       (setq calc-embedded-trail-window
+             (if vertical-p
+                 (split-window-horizontally (- (max 30 (/ (window-width) 3))))
+               (split-window-vertically (- (max 8 (/ (window-height) 4)))))))
+      (switch-to-buffer "*Calc Trail*")
+      (select-window
+       (setq calc-embedded-calculator-window
+             (if vertical-p
+                 (split-window-vertically -6)
+               (split-window-horizontally (- (/ (window-width) 2))))))
+      (switch-to-buffer "*Calculator*")
+      (select-window main-window))))
+
+#+end_src
+**
+
 * Org
 the swag
+** Org Variables
+#+begin_src emacs-lisp
+(after! org
+(setq org-fontify-quote-and-verse-blocks t)
+(setq org-highlight-latex-and-related '(native script entities))
+(setq org-agenda-files '("~/org/roam/dailies"))
+(require 'org-src)
+(add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
 
-** Hooks
+
+
+
+(defadvice org-export-output-file-name (before org-add-export-dir activate)
+  "Modifies org-export to place exported files in a different directory"
+  (when (not pub-dir)
+      (setq pub-dir "~/org/exported/")
+      (when (not (file-directory-p pub-dir))
+       (make-directory pub-dir))))
+)
+#+end_src
+
+
+
+#+RESULTS:
+: org-export-output-file-name
+
+*** Hooks
 #+begin_src emacs-lisp
 (defun nicer-org ()
   (progn
@@ -627,130 +772,10 @@ the swag
   ; (org-indent-mode -1)
   ))
 (add-hook! 'org-mode-hook  #'nicer-org)
-(add-hook! 'org-mode        #'nicer-org) ; NOTE: May be brokie
-#+end_src
-
-** Org Variables
-#+begin_src emacs-lisp
-(use-package! org
-:config
-(setq org-fontify-quote-and-verse-blocks t
-org-highlight-latex-and-related '(native script entities)
-org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
-
-(require 'org-src)
-(add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t))))
 #+end_src
 
 #+RESULTS:
-: t
 
-#+begin_src emacs-lisp
-(after! org
-;; This function is nice because it helps keep whatever directory I'm working in clean. I like to do homework in org roam as well, and don't want that directory to be filled with a bunch of .tex and .pdf files
-
-(defadvice org-export-output-file-name (before org-add-export-dir activate)
-  "Modifies org-export to place exported files in a different directory"
-  (when (not pub-dir)
-      (setq pub-dir "~/org/exported/")
-      (when (not (file-directory-p pub-dir))
-       (make-directory pub-dir)))))
-#+end_src
-
-#+RESULTS:
-: org-export-output-file-name
-
-** Look and Feel
-*** Custom Faces
-#+begin_src emacs-lisp
-(after! org
-  (custom-set-faces!
-    `((org-quote)
-      :foreground ,(doom-color 'blue) :extend t)
-    `((org-block-begin-line org-block-end-line)
-      :background ,(doom-color 'bg)))
-  ;; Change how LaTeX and image previews are shown
-  (setq org-highlight-latex-and-related '(native entities script)
-        org-image-actual-width (min (/ (display-pixel-width) 3) 800)))
-
-#+end_src
-#+RESULTS:
-: 800
-Using medium weights and stuff for our headers, as well as making them larger
-#+begin_src emacs-lisp :results none
-(after! org-mode
-  (custom-set-faces!
-    '((org-document-title)
-      :foreground ,(face-attribute 'org-document-title :foreground)
-      :height 2.0
-      :weight bold
-      )
-    '((org-level-1)
-      :height 1.7
-      :weight medium
-      :foreground ,(face-attribute 'outline-1 :foreground)
-      )
-    '((org-level-2)
-      :height 1.6
-      :weight medium
-      :foreground ,(face-attribute 'outline-2 :foreground)
-      )
-    '((org-level-3)
-      :height 1.5
-      :weight medium
-      :foreground ,(face-attribute 'outline-3 :foreground)
-      )
-    '((org-level-4)
-      :height 1.4
-      :weight medium
-      :foreground ,(face-attribute 'outline-4 :foreground)
-      )
-    '((org-level-5)
-      :height 1.3
-      :weight medium
-      :foreground ,(face-attribute 'outline-5 :foreground)
-      )
-    '((org-level-6)
-      :height 1.2
-      :weight medium
-      :foreground ,(face-attribute 'outline-6 :foreground)
-      )
-    '((org-level-7)
-      :height 1.1
-      :weight medium
-      :foreground ,(face-attribute 'outline-7 :foreground)
-      )
-    ))
-#+end_src
-*** Org-Ellipsis
-#+begin_src emacs-lisp :results none
-(after! org
-(setq org-ellipsis " ▾ "
-      org-hide-leading-stars t
-      org-priority-highest ?A
-      org-priority-lowest ?E
-      org-priority-faces
-      '((?A . 'nerd-icons-red)
-        (?B . 'nerd-icons-orange)
-        (?C . 'nerd-icons-yellow)
-        (?D . 'nerd-icons-green)
-        (?E . 'nerd-icons-blue)))
-
-(appendq! +ligatures-extra-symbols
-          (list :list_property "∷"
-                :em_dash       "—"
-                :ellipses      "…"
-                :arrow_right   "→"
-                :arrow_left    "←"
-                :arrow_lr      "↔"
-                :properties    "⚙"
-                :end           "∎"
-                :priority_a    #("⚑" 0 1 (face nerd-icons-red))
-                :priority_b    #("⬆" 0 1 (face nerd-icons-orange))
-                :priority_c    #("■" 0 1 (face nerd-icons-yellow))
-                :priority_d    #("⬇" 0 1 (face nerd-icons-green))
-                :priority_e    #("❓" 0 1 (face nerd-icons-blue)))))
-#+end_src
 ** Keybinds
 *** TODO General
 #+begin_src emacs-lisp
@@ -782,7 +807,7 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
 
 
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
 (map! :after org
       :map org-mode-map
       :localleader
@@ -794,6 +819,47 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
 #+end_src
 #+RESULTS:
 
+** Org Look and Feel
+*** Org Headers
+we want them bigger than text
+#+begin_src emacs-lisp
+(custom-set-faces
+ '(org-level-1 ((t (:inherit outline-1 :height 1.7))))
+ '(org-level-2 ((t (:inherit outline-2 :height 1.6))))
+ '(org-level-3 ((t (:inherit outline-3 :height 1.5))))
+ '(org-level-4 ((t (:inherit outline-4 :height 1.4))))
+ '(org-level-5 ((t (:inherit outline-5 :height 1.3))))
+ '(org-level-6 ((t (:inherit outline-5 :height 1.2))))
+ '(org-level-7 ((t (:inherit outline-5 :height 1.1)))))
+
+(custom-set-faces!
+  '(org-document-title :height 2.0))
+#+end_src
+
+#+RESULTS:
+| doom--customize-themes-h-34 | doom--customize-themes-h-89 |
+
+*** Text Prefixes?
+#+begin_src emacs-lisp
+(defadvice! +org-indent--reduced-text-prefixes ()
+  :after #'org-indent--compute-prefixes
+  (setq org-indent--text-line-prefixes
+        (make-vector org-indent--deepest-level nil))
+  (when (> org-indent-indentation-per-level 0)
+    (dotimes (n org-indent--deepest-level)
+      (aset org-indent--text-line-prefixes
+            n
+            (org-add-props
+                (concat (make-string (* n (1- org-indent-indentation-per-level))
+                                     ?\s)
+                        (if (> n 0)
+                            (char-to-string org-indent-boundary-char)
+                          "\u200b"))
+                nil 'face 'org-indent)))))
+#+end_src
+
+#+RESULTS:
+
 *** Spell-Fu
 #+begin_src emacs-lisp
 (after! spell-fu
@@ -802,17 +868,103 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
 
 #+RESULTS:
 
-*** Org-Appear
+*** Org-Ellipsis
 #+begin_src emacs-lisp
-(use-package! org-appear
-  :hook (org-mode . org-appear-mode)
-  :config
-  (setq org-hide-emphasis-markers t
-        org-appear-autolinks 'just-brackets))
+(setq org-ellipsis " ▾ "
+      org-hide-leading-stars t
+      org-priority-highest ?A
+      org-priority-lowest ?E
+      org-priority-faces
+      '((?A . 'nerd-icons-red)
+        (?B . 'nerd-icons-orange)
+        (?C . 'nerd-icons-yellow)
+        (?D . 'nerd-icons-green)
+        (?E . 'nerd-icons-blue)))
+
+(appendq! +ligatures-extra-symbols
+          (list :list_property "∷"
+                :em_dash       "—"
+                :ellipses      "…"
+                :arrow_right   "→"
+                :arrow_left    "←"
+                :arrow_lr      "↔"
+                :properties    "⚙"
+                :end           "∎"
+                :priority_a    #("⚑" 0 1 (face nerd-icons-red))
+                :priority_b    #("⬆" 0 1 (face nerd-icons-orange))
+                :priority_c    #("■" 0 1 (face nerd-icons-yellow))
+                :priority_d    #("⬇" 0 1 (face nerd-icons-green))
+                :priority_e    #("❓" 0 1 (face nerd-icons-blue))))
 #+end_src
 
 #+RESULTS:
-| org-appear-mode | org-modern-mode | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+| :name | » | :src_block | » | :src_block_end | « | :quote | “ | :quote_end | ” | :lambda | λ  | :def | ƒ | :composition | ∘ | :map | ↦ | :null | ∅ | :true | 𝕋 | :false | 𝔽 | :int | ℤ | :float | ℝ | :str | 𝕊 | :bool | 𝔹 | :list | 𝕃 | :not | ￢ | :in | ∈ | :not-in | ∉ | :and | ∧ | :or | ∨ | :for | ∀ | :some | ∃ | :return | ⟼ | :yield | ⟻ | :union | ⋃ | :intersect | ∩ | :diff | ∖ | :tuple | ⨂ | :pipe |  | :dot | • | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇  | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆  | :priority_c | ■ | :priority_d | ⬇  | :priority_e | ❓ |
+
+*** TODO figure out what to call this header
+#+begin_src emacs-lisp
+(defadvice! +org-init-appearance-h--no-ligatures-a ()
+  :after #'+org-init-appearance-h
+  (set-ligatures! 'org-mode nil)
+  (set-ligatures! 'org-mode
+    :list_property "::"
+    :em_dash       "---"
+    :ellipsis      "..."
+    :arrow_right   "->"
+    :arrow_left    "<-"
+    :arrow_lr      "<->"
+    :properties    ":PROPERTIES:"
+    :end           ":END:"
+    :priority_a    "[#A]"
+    :priority_b    "[#B]"
+    :priority_c    "[#C]"
+    :priority_d    "[#D]"
+    :priority_e    "[#E]"))
+#+end_src
+** Behavior
+*** Bullet Promotion & Demotion
+
+#+begin_src emacs-lisp
+(setq org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
+#+end_src
+
+#+RESULTS:
+: ((+ . -) (- . +) (* . +) (1. . a.))
+
+*** Org-Appear
+#+begin_src emacs-lisp
+(use-package org-appear
+  :hook (org-mode . org-appear-mode)
+  :config
+  (setq org-appear-autoemphasis t
+        org-appear-autosubmarkers t
+        org-appear-autolinks nil)
+  ;; for proper first-time setup, `org-appear--set-elements'
+  ;; needs to be run after other hooks have acted.
+  (run-at-time nil nil #'org-appear--set-elements))
+(setq org-appear-mode t)
+#+end_src
+
+#+RESULTS:
+: t
+
+*** Org-Ol-Tree (broken I think)
+#+begin_src emacs-lisp
+(use-package org-ol-tree
+  :commands org-ol-tree
+  :config
+  (setq org-ol-tree-ui-icon-set
+        (if (and (display-graphic-p)
+                 (fboundp 'all-the-icons-material))
+            'all-the-icons
+          'unicode))
+  (org-ol-tree-ui--update-icon-set))
+(map! :map org-mode-map
+      :after org
+      :localleader
+      :desc "Outline" "O" #'org-ol-tree)
+#+end_src
+
+#+RESULTS:
 
 ** Babel
 *** Default Header Args
@@ -845,6 +997,79 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
    '(cpp . t)))
 #+end_src
 
+
+*** LSP Org-Babel-Enable (Doesn't Work?)
+trying something
+#+begin_src emacs-lisp
+;;(cl-defmacro lsp-org-babel-enable (lang)
+;;  "Support LANG in org source code block."
+;;  (setq centaur-lsp 'lsp-mode)
+;;  (cl-check-type lang string)
+;;  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+;;         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+;;    `(progn
+;;       (defun ,intern-pre (info)
+;;         (let ((file-name (->> info caddr (alist-get :file))))
+;;           (unless file-name
+;;             (setq file-name (make-temp-file "babel-lsp-")))
+;;           (setq buffer-file-name file-name)
+;;           (lsp-deferred)))
+;;       (put ',intern-pre 'function-documentation
+;;            (format "Enable lsp-mode in the buffer of org source block (%s)."
+;;                    (upcase ,lang)))
+;;       (if (fboundp ',edit-pre)
+;;           (advice-add ',edit-pre :after ',intern-pre)
+;;         (progn
+;;           (defun ,edit-pre (info)
+;;             (,intern-pre info))
+;;           (put ',edit-pre 'function-documentation
+;;                (format "Prepare local buffer environment for org source block (%s)."
+;;                        (upcase ,lang))))))))
+;;(defvar org-babel-lang-list
+;;  '("go" "python" "ipython" "bash" "sh"))
+;;(dolist (lang org-babel-lang-list)
+;;  (eval `(lsp-org-babel-enable ,lang)))
+#+end_src
+
+#+RESULTS:
+
+
+#+RESULTS:
+| (closure (t) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | lsp-deferred | nicer-org | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | turn-on-org-cdlatex | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | org-appear-mode | org-modern-mode | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+
+#+begin_src emacs-lisp
+;;(cl-defmacro lsp-org-babel-enable (lang)
+;;  "Support LANG in org source code block."
+;;  (setq centaur-lsp 'lsp-mode)
+;;  (cl-check-type lang string)
+;;  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+;;         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+;;    `(progn
+;;       (defun ,intern-pre (info)
+;;         (let ((file-name (->> info caddr (alist-get :file))))
+;;           (unless file-name
+;;             (setq file-name (make-temp-file "babel-lsp-")))
+;;           (setq buffer-file-name file-name)
+;;           (lsp-deferred)))
+;;       (put ',intern-pre 'function-documentation
+;;            (format "Enable lsp-mode in the buffer of org source block (%s)."
+;;                    (upcase ,lang)))
+;;       (if (fboundp ',edit-pre)
+;;           (advice-add ',edit-pre :after ',intern-pre)
+;;         (progn
+;;           (defun ,edit-pre (info)
+;;             (,intern-pre info))
+;;           (put ',edit-pre 'function-documentation
+;;                (format "Prepare local buffer environment for org source block (%s)."
+;;                        (upcase ,lang))))))))
+;;(defvar org-babel-lang-list
+;;  '("go" "python" "ipython" "bash" "sh" "rust" "emacs-lisp"))
+;;(dolist (lang org-babel-lang-list)
+;;  (eval `(lsp-org-babel-enable ,lang)))
+#+end_src
+
+#+RESULTS:
+
 ** Org-Latex
 #+begin_src emacs-lisp
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
@@ -852,6 +1077,7 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
   :after #'org-cdlatex-environment-indent
   (org-edit-latex-environment))
 #+end_src
+
 #+RESULTS:
 
 #+begin_src emacs-lisp
@@ -875,8 +1101,9 @@ Defining our font size:
 (plist-put org-format-latex-options :zoom 1.93)
 (after! org (plist-put org-format-latex-options :scale 2.0))
 #+end_src
-#+begin_src emacs-lisp
-#+end_src
+
+#+RESULTS:
+| :foreground | default | :background | default | :scale | 2.0 | :html-foreground | Black | :html-background | Transparent | :html-scale | 1.0 | :matchers | (begin $1 $ $$ \( \[) | :zoom | 1.93 |
 
 ** Org-Roam
 #+begin_src emacs-lisp
@@ -1004,7 +1231,29 @@ Return nil otherwise."
     (car (cl-set-difference src-langs header-langs :test #'string=))))
 
 #+end_src
+** TODO Org tree
+#+begin_src emacs-lisp
+(use-package! org-ol-tree
+  :commands org-ol-tree
+  :config
+  (setq org-ol-tree-ui-icon-set
+        (if (and (display-graphic-p)
+                 (fboundp 'all-the-icons-material))
+            'all-the-icons
+          'unicode))
+  (org-ol-tree-ui--update-icon-set))
+
+(map! :map org-mode-map
+      :after org
+      :localleader
+      :desc "Outline" "O" #'org-ol-tree)
+#+end_src
+
+#+RESULTS:
+
+** Capture
 ** Exporting
+
 *** Org Export Backends:
 yanked this from my .custom thing cause I want it to setup here
 #+begin_src emacs-lisp 
@@ -1162,40 +1411,39 @@ The =hyperref= setup needs to be handled separately however.
 ** TODO Org-Modern
 still need to fix this :/
 the key to it looking *pretty*
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (use-package! org-modern
- :hook (org-mode . org-modern-mode)
- :config
- (setq
-  org-special-ctrl-a/e t
-  org-insert-heading-respect-content t
-  ;; appearance
-  org-modern-radio-target    '("❰" t "❱")
-  org-modern-internal-target '("↪ " t "") ; TODO: make this not be an emoji, and instead a font lig
-  org-modern-todo t
-  org-modern-todo-faces
-  '(("TODO" :inverse-video t :inherit org-todo)
-   ("PROJ" :inverse-video t :inherit +org-todo-project)
-   ("STRT" :inverse-video t :inherit +org-todo-active)
-   ("[-]"  :inverse-video t :inherit +org-todo-active)
-   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
-   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
-   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
-   ("KILL" :inverse-video t :inherit +org-todo-cancel)
-   ("NO"   :inverse-video t :inherit +org-todo-cancel))
-  org-modern-footnote (cons nil (cadr org-script-display))
-   org-modern-block-name
-   '((t . t)
-     ("src" "»" "«")
-     ("example" "»–" "–«")
-     ("quote" "❝" "❞")
-     ("export" "⏩" "⏪"))
-   org-modern-priority nil
-   org-modern-progress nil
-   ; org-modern-horizontal-rule (make-string 36 ?─)
-   org-modern-horizontal-rule "──────────"
-  ; org-modern-hide-stars "·"
-   org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
+  :ensure t
+  :hook '(org . org-modern-mode)
+  :config
+  (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
+        org-modern-table-vertical 1
+        org-modern-table-horizontal 0.2
+        org-modern-list '((43 . "➤")
+                          (45 . "–")
+                          (42 . "•"))
+        org-modern-todo-faces
+        '(("TODO" :inverse-video t :inherit org-todo)
+          ("PROJ" :inverse-video t :inherit +org-todo-project)
+          ("STRT" :inverse-video t :inherit +org-todo-active)
+          ("[-]"  :inverse-video t :inherit +org-todo-active)
+          ("HOLD" :inverse-video t :inherit +org-todo-onhold)
+          ("WAIT" :inverse-video t :inherit +org-todo-onhold)
+          ("[?]"  :inverse-video t :inherit +org-todo-onhold)
+          ("KILL" :inverse-video t :inherit +org-todo-cancel)
+          ("NO"   :inverse-video t :inherit +org-todo-cancel))
+        org-modern-footnote
+        (cons nil (cadr org-script-display))
+        org-modern-block-fringe nil
+        org-modern-block-name
+        '((t . t)
+          ("src" "»" "«")
+          ("example" "»–" "–«")
+          ("quote" "❝" "❞")
+          ("export" "⏩" "⏪"))
+        org-modern-progress nil
+        org-modern-priority nil
+        org-modern-horizontal-rule (make-string 36 ?─)
         org-modern-keyword
         '((t . t)
           ("title" . "𝙏")
@@ -1236,13 +1484,18 @@ the key to it looking *pretty*
           ("caption" . "☰")
           ("results" . "🠶")))
   (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
+  #+end_src
 
+  #+RESULTS:
+  | org-modern-mode |
 
-
+*** Org-Modern hook
+#+begin_src emacs-lisp
+(add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
 #+end_src
 
 #+RESULTS:
-| org-modern-mode | er/add-org-mode-expansions | (closure (t) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+| (lambda nil (org-modern-mode 1)) | turn-on-org-cdlatex | org-appear-mode | nicer-org | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
 
 ** Org-Agenda and Dailies
 *** Define My Daily Template:
@@ -1432,6 +1685,7 @@ either that, or just specify options for stuff that needs it
 *** Prolog
 I've been using prolog for some classes, and am honestly enjoying using the language, it's growing on me for sure. What's nice is that Prolog is largely a GNU project, and so it's already included in base emacs with a prolog-mode. Just needs some configuring, and an lsp backend to make things real nice
 #+begin_src emacs-lisp
+(when(executable-find "swipl")
   (after! lsp-mode
     (lsp-register-client
      (make-lsp-client
@@ -1446,6 +1700,7 @@ I've been using prolog for some classes, and am honestly enjoying using the lang
       :multi-root t
       :server-id 'prolog-ls))
     )
+  )
 (when (not (executable-find "swipl"))
   (warn! "Swipl not found in the system, prolog might not work as expected"))
 #+end_src

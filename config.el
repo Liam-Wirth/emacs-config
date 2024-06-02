@@ -30,12 +30,30 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
-(setq-default
- delete-by-moving-to-trash t                      ; Delete files to trash
- window-combination-resize t                      ; take new window space from all other windows (not just current)
- x-stretch-cursor t                               ; Stretch cursor to the glyph width
- show-paren-mode 1                                ; Highlight Matching Parenthesis
-)
+;; Some functionality uses this to identify you, e.g. GPG configuration, email
+;; clients, file templates and snippets. It is optional.
+ (setq user-full-name "Liam Wirth"
+       user-mail-address "ltwirth@asu.edu")
+
+
+;; If you use `org' and don't want your org files in the default location below,
+;; change `org-directory'. It must be set before org loads!
+(setq org-directory "~/org/")
+;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
+;; I thought to myself "why not try to combine the two?"
+(setq org-agenda-files '("~/org/roam/daily/"))
+
+(unless (file-exists-p (expand-file-name "persp" doom-cache-dir))
+  (make-directory (expand-file-name "persp/" doom-cache-dir) t))
+(defun my/persp-save-session-with-name (name)
+  "save the current session with a specified NAME."
+  (interactive "sEnter session name: ")
+  (persp-save-state-to-file (concat persp-save-dir name)))
+
+
+
+(after! persp-mode)
+  ;;by default persp save dir is .config/emacs/.local/etc/workspaces I'm chill w/ that
 
 (setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
       evil-want-fine-undo t                       ; By default while in insert all changes are one big blob. Be more granular
@@ -44,20 +62,47 @@
       password-cache-expiry nil                   ; I can trust my computers ... can't I?
       scroll-preserve-screen-position 'always     ; Don't have `point' jump around
       scroll-margin 2                             ; It's nice to maintain a little margin
-      display-time-default-load-average nil)      ; I don't think I've ever found this useful
+      display-time-default-load-average nil       ; I don't think I've ever found this useful
+      display-line-numbers-type 'relative         ; RelNum ON TOP
+      )
+
 
 (display-time-mode 1)                             ; Enable time in the mode-line
 (global-subword-mode 1)                           ; Iterate through CamelCase words
+(pixel-scroll-precision-mode t)                   ; Turn on pixel scrolling
 
-(add-to-list 'default-frame-alist '(height . 24))
-(add-to-list 'default-frame-alist '(width . 80))
+
+
+(setq-default
+ delete-by-moving-to-trash t                      ; Delete files to trash
+ window-combination-resize t                      ; take new window space from all other windows (not just current)
+ x-stretch-cursor t                               ; Stretch cursor to the glyph width
+ show-paren-mode 1                                ; Highlight Matching Parenthesis
+ abbrev-mode t                                    ; erm..
+)
+
+(add-to-list 'default-frame-alist '(width . 92))
+(add-to-list 'default-frame-alist '(height . 40))
+
+(setq evil-vsplit-window-right t
+      evil-split-window-below t)
+
+(setq frame-title-format
+      '(""
+        (:eval
+         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
+             (replace-regexp-in-string
+              ".*/[0-9]*-?" "☰ "
+              (subst-char-in-string ?_ ?  buffer-file-name))
+           "%b"))
+        (:eval
+         (let ((project-name (projectile-project-name)))
+           (unless (string= "-" project-name)
+             (format (if (buffer-modified-p)  " ◉ %s" "  ●  %s") project-name))))))
 
 (setq-default custom-file (expand-file-name ".custom.el" doom-private-dir))
 (when (file-exists-p custom-file)
   (load custom-file))
-
-(setq evil-vsplit-window-right t
-      evil-split-window-below t)
 
 (defadvice! prompt-for-buffer (&rest _)
   :after '(evil-window-split evil-window-vsplit)
@@ -127,10 +172,8 @@
 
 (setq-default line-spacing 0.05)
 
-
-
-(setq doom-theme 'doom-gruvbox)
-(setq display-line-numbers-type 'relative)
+(setq doom-theme 'doom-gruvbox
+      doom-themes-treemacs-enable-variable-pitch nil)
 
 (blink-cursor-mode -1)
 (column-number-mode t)
@@ -139,6 +182,7 @@
 (after! doom-modeline
   (setq doom-modeline-enable-word-count t)
   (setq doom-modeline-icon t)
+  (setq doom-modeline-persp-name t)
   (setq doom-modeline-height 45)
   (setq doom-modeline-lsp-icon t)
   (setq doom-modeline-total-line-number t)
@@ -246,7 +290,7 @@
   (insert "\n" (splash-phrase-dashboard-formatted) "\n"))
 
 (after! centaur-tabs
-  (centaur-tabs-mode -1)
+
   (setq centaur-tabs-height 36
         centaur-tabs-set-icons t
         centaur-tabs-modified-marker "o"
@@ -269,87 +313,10 @@
    ))
 (setq which-key-allow-multiple-replacements t)
 
-;; (use-package keycast
-;;   :commands keycast-mode
-;;   :config
-;;   (define-minor-mode keycast-mode
-;;     "Show current command and its key binding in the mode line."
-;;     :global t
-;;     (if keycast-mode
-;;         (progn
-;;           (add-hook 'pre-command-hook 'keycast--update t)
-;;           (add-to-list 'global-mode-string '("" mode-line-keycast " ")))
-;;       (remove-hook 'pre-command-hook 'keycast--update)
-;;       (setq global-mode-string (remove '("" mode-line-keycast " ") global-mode-string))))
-;;   (custom-set-faces!
-;;     '(keycast-command :inherit doom-modeline-debug
-;;       :height 0.9)
-;;     '(keycast-key :inherit custom-modified
-;;       :height 1.1
-;;       :weight bold)))
-
 (use-package! elcord
   :commands elcord-mode
   :config
   (setq elcord-use-major-mode-as-main-icon t))
-
-;; (use-package! calctex
-;;   :commands calctex-mode
-;;   :init
-;;   (add-hook 'calc-mode-hook #'calctex-mode)
-;;   :config
-;; )
-
-;;(use-package! calctex
-;;  :commands calctex-mode
-;;  :init
-;;  (add-hook 'calc-mode-hook #'calctex-mode)
-;;  :config
-;;  (setq calctex-additional-latex-packages "
-;;\\usepackage[usenames]{xcolor}
-;;\\usepackage{soul}
-;;\\usepackage{adjustbox}
-;;\\usepackage{amsmath}
-;;\\usepackage{amssymb}
-;;\\usepackage{siunitx}
-;;\\usepackage{cancel}
-;;\\usepackage{mathtools}
-;;\\usepackage{mathalpha}
-;;\\usepackage{xparse}
-;;\\usepackage{arevmath}"
-;;        calctex-additional-latex-macros
-;;        (concat calctex-additional-latex-macros
-;;                "\n\\let\\evalto\\Rightarrow"))
-;;  (defadvice! no-messaging-a (orig-fn &rest args)
-;;    :around #'calctex-default-dispatching-render-process
-;;    (let ((inhibit-message t) message-log-max)
-;;      (apply orig-fn args)))
-;;  ;; Fix hardcoded dvichop path (whyyyyyyy)
-;;  (let ((vendor-folder (concat (file-truename doom-local-dir)
-;;                               "straight/"
-;;                               (format "build-%s" emacs-version)
-;;                               "/calctex/vendor/")))
-;;    (setq calctex-dvichop-sty (concat vendor-folder "texd/dvichop")
-;;          calctex-dvichop-bin (concat vendor-folder "texd/dvichop")))
-;;  (unless (file-exists-p calctex-dvichop-bin)
-;;    (message "CalcTeX: Building dvichop binary")
-;;    (let ((default-directory (file-name-directory calctex-dvichop-bin)))
-;;      (call-process "make" nil nil nil))))
-
-(map! :map calc-mode-map
-      :after calc
-      :localleader
-      :desc "Embedded calc (toggle)" "e" #'calc-embedded)
-(map! :map org-mode-map
-      :after org
-      :localleader
-      :desc "Embedded calc (toggle)" "E" #'calc-embedded)
-(map! :map latex-mode-map
-      :after latex
-      :localleader
-      :desc "Embedded calc (toggle)" "e" #'calc-embedded)
-(defvar calc-embedded-trail-window nil)
-(defvar calc-embedded-calculator-window nil)
 
 (defface variable-pitch-serif
     '((t (:family "serif")))
@@ -364,33 +331,33 @@
          (set-face-attribute 'variable-pitch-serif nil :font value)
          (set-default-toplevel-value symbol value)))
 
-(defvar mixed-pitch-modes '(org-mode LaTeX-mode markdown-mode gfm-mode Info-mode)
-  "Modes that `mixed-pitch-mode' should be enabled in, but only after UI initialisation.")
-(defun init-mixed-pitch-h ()
-  "Hook `mixed-pitch-mode' into each mode in `mixed-pitch-modes'.
-Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
-  (when (memq major-mode mixed-pitch-modes)
-    (mixed-pitch-mode 1))
-  (dolist (hook mixed-pitch-modes)
-    (add-hook (intern (concat (symbol-name hook) "-hook")) #'mixed-pitch-mode)))
-(add-hook 'doom-init-ui-hook #'init-mixed-pitch-h)
-
-(autoload #'mixed-pitch-serif-mode "mixed-pitch"
-  "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch." t)
-
-(setq! variable-pitch-serif-font (font-spec :family "Alegreya" :size 27))
-
-(after! mixed-pitch
-  (setq mixed-pitch-set-height t)
-  (set-face-attribute 'variable-pitch-serif nil :font variable-pitch-serif-font)
-  (defun mixed-pitch-serif-mode (&optional arg)
-    "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch."
-    (interactive)
-    (let ((mixed-pitch-face 'variable-pitch-serif))
-      (mixed-pitch-mode (or arg 'toggle)))))
-
-(set-char-table-range composition-function-table ?f '(["\\(?:ff?[fijlt]\\)" 0 font-shape-gstring]))
-(set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
+;;(defvar mixed-pitch-modes '(org-mode LaTeX-mode markdown-mode gfm-mode Info-mode)
+;;  "Modes that `mixed-pitch-mode' should be enabled in, but only after UI initialisation.")
+;;(defun init-mixed-pitch-h ()
+;;  "Hook `mixed-pitch-mode' into each mode in `mixed-pitch-modes'.
+;;Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
+;;  (when (memq major-mode mixed-pitch-modes)
+;;    (mixed-pitch-mode 1))
+;;  (dolist (hook mixed-pitch-modes)
+;;    (add-hook (intern (concat (symbol-name hook) "-hook")) #'mixed-pitch-mode)))
+;;(add-hook 'doom-init-ui-hook #'init-mixed-pitch-h)
+;;
+;;(autoload #'mixed-pitch-serif-mode "mixed-pitch"
+;;  "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch." t)
+;;
+;;(setq! variable-pitch-serif-font (font-spec :family "Alegreya" :size 27))
+;;
+;;(after! mixed-pitch
+;;  (setq mixed-pitch-set-height t)
+;;  (set-face-attribute 'variable-pitch-serif nil :font variable-pitch-serif-font)
+;;  (defun mixed-pitch-serif-mode (&optional arg)
+;;    "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch."
+;;    (interactive)
+;;    (let ((mixed-pitch-face 'variable-pitch-serif))
+;;      (mixed-pitch-mode (or arg 'toggle)))))
+;;
+;;(set-char-table-range composition-function-table ?f '(["\\(?:ff?[fijlt]\\)" 0 font-shape-gstring]))
+;;(set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
 
 (defvar +zen-serif-p t
   "Whether to use a serifed font with `mixed-pitch-mode'.")
@@ -440,52 +407,6 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
   (add-hook 'writeroom-mode-enable-hook #'+zen-prose-org-h)
   (add-hook 'writeroom-mode-disable-hook #'+zen-nonprose-org-h))
 
-(defadvice! calc-embedded-with-side-pannel (&rest _)
-  :after #'calc-do-embedded
-  (when calc-embedded-trail-window
-    (ignore-errors
-      (delete-window calc-embedded-trail-window))
-    (setq calc-embedded-trail-window nil))
-  (when calc-embedded-calculator-window
-    (ignore-errors
-      (delete-window calc-embedded-calculator-window))
-    (setq calc-embedded-calculator-window nil))
-  (when (and calc-embedded-info
-             (> (* (window-width) (window-height)) 1200))
-    (let ((main-window (selected-window))
-          (vertical-p (> (window-width) 80)))
-      (select-window
-       (setq calc-embedded-trail-window
-             (if vertical-p
-                 (split-window-horizontally (- (max 30 (/ (window-width) 3))))
-               (split-window-vertically (- (max 8 (/ (window-height) 4)))))))
-      (switch-to-buffer "*Calc Trail*")
-      (select-window
-       (setq calc-embedded-calculator-window
-             (if vertical-p
-                 (split-window-vertically -6)
-               (split-window-horizontally (- (/ (window-width) 2))))))
-      (switch-to-buffer "*Calculator*")
-      (select-window main-window))))
-
-(after! org
-(setq org-fontify-quote-and-verse-blocks t)
-(setq org-highlight-latex-and-related '(native script entities))
-(setq org-agenda-files '("~/org/roam/dailies"))
-(require 'org-src)
-(add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
-
-
-
-
-(defadvice org-export-output-file-name (before org-add-export-dir activate)
-  "Modifies org-export to place exported files in a different directory"
-  (when (not pub-dir)
-      (setq pub-dir "~/org/exported/")
-      (when (not (file-directory-p pub-dir))
-       (make-directory pub-dir))))
-)
-
 (defun nicer-org ()
   (progn
   (+org-pretty-mode 1)
@@ -500,6 +421,107 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
   ; (org-indent-mode -1)
   ))
 (add-hook! 'org-mode-hook  #'nicer-org)
+(add-hook! 'org-mode        #'nicer-org) ; NOTE: May be brokie
+
+(use-package! org
+:config
+(setq org-fontify-quote-and-verse-blocks t
+org-highlight-latex-and-related '(native script entities)
+org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
+
+(require 'org-src)
+(add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t))))
+
+(after! org
+;; This function is nice because it helps keep whatever directory I'm working in clean. I like to do homework in org roam as well, and don't want that directory to be filled with a bunch of .tex and .pdf files
+
+(defadvice org-export-output-file-name (before org-add-export-dir activate)
+  "Modifies org-export to place exported files in a different directory"
+  (when (not pub-dir)
+      (setq pub-dir "~/org/exported/")
+      (when (not (file-directory-p pub-dir))
+       (make-directory pub-dir)))))
+
+(after! org
+  (custom-set-faces!
+    `((org-quote)
+      :foreground ,(doom-color 'blue) :extend t)
+    `((org-block-begin-line org-block-end-line)
+      :background ,(doom-color 'bg)))
+  ;; Change how LaTeX and image previews are shown
+  (setq org-highlight-latex-and-related '(native entities script)
+        org-image-actual-width (min (/ (display-pixel-width) 3) 800)))
+
+(after! org-mode
+  (custom-set-faces!
+    '((org-document-title)
+      :foreground ,(face-attribute 'org-document-title :foreground)
+      :height 2.0
+      :weight bold
+      )
+    '((org-level-1)
+      :height 1.7
+      :weight medium
+      :foreground ,(face-attribute 'outline-1 :foreground)
+      )
+    '((org-level-2)
+      :height 1.6
+      :weight medium
+      :foreground ,(face-attribute 'outline-2 :foreground)
+      )
+    '((org-level-3)
+      :height 1.5
+      :weight medium
+      :foreground ,(face-attribute 'outline-3 :foreground)
+      )
+    '((org-level-4)
+      :height 1.4
+      :weight medium
+      :foreground ,(face-attribute 'outline-4 :foreground)
+      )
+    '((org-level-5)
+      :height 1.3
+      :weight medium
+      :foreground ,(face-attribute 'outline-5 :foreground)
+      )
+    '((org-level-6)
+      :height 1.2
+      :weight medium
+      :foreground ,(face-attribute 'outline-6 :foreground)
+      )
+    '((org-level-7)
+      :height 1.1
+      :weight medium
+      :foreground ,(face-attribute 'outline-7 :foreground)
+      )
+    ))
+
+(after! org
+(setq org-ellipsis " ▾ "
+      org-hide-leading-stars t
+      org-priority-highest ?A
+      org-priority-lowest ?E
+      org-priority-faces
+      '((?A . 'nerd-icons-red)
+        (?B . 'nerd-icons-orange)
+        (?C . 'nerd-icons-yellow)
+        (?D . 'nerd-icons-green)
+        (?E . 'nerd-icons-blue)))
+
+(appendq! +ligatures-extra-symbols
+          (list :list_property "∷"
+                :em_dash       "—"
+                :ellipses      "…"
+                :arrow_right   "→"
+                :arrow_left    "←"
+                :arrow_lr      "↔"
+                :properties    "⚙"
+                :end           "∎"
+                :priority_a    #("⚑" 0 1 (face nerd-icons-red))
+                :priority_b    #("⬆" 0 1 (face nerd-icons-orange))
+                :priority_c    #("■" 0 1 (face nerd-icons-yellow))
+                :priority_d    #("⬇" 0 1 (face nerd-icons-green))
+                :priority_e    #("❓" 0 1 (face nerd-icons-blue)))))
 
 (map! :after org
       :map org-mode-map
@@ -526,107 +548,14 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
       :localleader
       :n "o" #'org-edit-src-code)
 
-(custom-set-faces
- '(org-level-1 ((t (:inherit outline-1 :height 1.7))))
- '(org-level-2 ((t (:inherit outline-2 :height 1.6))))
- '(org-level-3 ((t (:inherit outline-3 :height 1.5))))
- '(org-level-4 ((t (:inherit outline-4 :height 1.4))))
- '(org-level-5 ((t (:inherit outline-5 :height 1.3))))
- '(org-level-6 ((t (:inherit outline-5 :height 1.2))))
- '(org-level-7 ((t (:inherit outline-5 :height 1.1)))))
-
-(custom-set-faces!
-  '(org-document-title :height 2.0))
-
-(defadvice! +org-indent--reduced-text-prefixes ()
-  :after #'org-indent--compute-prefixes
-  (setq org-indent--text-line-prefixes
-        (make-vector org-indent--deepest-level nil))
-  (when (> org-indent-indentation-per-level 0)
-    (dotimes (n org-indent--deepest-level)
-      (aset org-indent--text-line-prefixes
-            n
-            (org-add-props
-                (concat (make-string (* n (1- org-indent-indentation-per-level))
-                                     ?\s)
-                        (if (> n 0)
-                            (char-to-string org-indent-boundary-char)
-                          "\u200b"))
-                nil 'face 'org-indent)))))
-
 (after! spell-fu
   (cl-pushnew 'org-modern-tag (alist-get 'org-mode +spell-excluded-faces-alist)))
 
-(setq org-ellipsis " ▾ "
-      org-hide-leading-stars t
-      org-priority-highest ?A
-      org-priority-lowest ?E
-      org-priority-faces
-      '((?A . 'nerd-icons-red)
-        (?B . 'nerd-icons-orange)
-        (?C . 'nerd-icons-yellow)
-        (?D . 'nerd-icons-green)
-        (?E . 'nerd-icons-blue)))
-
-(appendq! +ligatures-extra-symbols
-          (list :list_property "∷"
-                :em_dash       "—"
-                :ellipses      "…"
-                :arrow_right   "→"
-                :arrow_left    "←"
-                :arrow_lr      "↔"
-                :properties    "⚙"
-                :end           "∎"
-                :priority_a    #("⚑" 0 1 (face nerd-icons-red))
-                :priority_b    #("⬆" 0 1 (face nerd-icons-orange))
-                :priority_c    #("■" 0 1 (face nerd-icons-yellow))
-                :priority_d    #("⬇" 0 1 (face nerd-icons-green))
-                :priority_e    #("❓" 0 1 (face nerd-icons-blue))))
-
-(defadvice! +org-init-appearance-h--no-ligatures-a ()
-  :after #'+org-init-appearance-h
-  (set-ligatures! 'org-mode nil)
-  (set-ligatures! 'org-mode
-    :list_property "::"
-    :em_dash       "---"
-    :ellipsis      "..."
-    :arrow_right   "->"
-    :arrow_left    "<-"
-    :arrow_lr      "<->"
-    :properties    ":PROPERTIES:"
-    :end           ":END:"
-    :priority_a    "[#A]"
-    :priority_b    "[#B]"
-    :priority_c    "[#C]"
-    :priority_d    "[#D]"
-    :priority_e    "[#E]"))
-
-(setq org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
-
-(use-package org-appear
+(use-package! org-appear
   :hook (org-mode . org-appear-mode)
   :config
-  (setq org-appear-autoemphasis t
-        org-appear-autosubmarkers t
-        org-appear-autolinks nil)
-  ;; for proper first-time setup, `org-appear--set-elements'
-  ;; needs to be run after other hooks have acted.
-  (run-at-time nil nil #'org-appear--set-elements))
-(setq org-appear-mode t)
-
-(use-package org-ol-tree
-  :commands org-ol-tree
-  :config
-  (setq org-ol-tree-ui-icon-set
-        (if (and (display-graphic-p)
-                 (fboundp 'all-the-icons-material))
-            'all-the-icons
-          'unicode))
-  (org-ol-tree-ui--update-icon-set))
-(map! :map org-mode-map
-      :after org
-      :localleader
-      :desc "Outline" "O" #'org-ol-tree)
+  (setq org-hide-emphasis-markers t
+        org-appear-autolinks 'just-brackets))
 
 (setq org-babel-default-header-args
       '((:session . "none")
@@ -648,64 +577,6 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
    '(c . t)
    '(cpp . t)))
 
-;;(cl-defmacro lsp-org-babel-enable (lang)
-;;  "Support LANG in org source code block."
-;;  (setq centaur-lsp 'lsp-mode)
-;;  (cl-check-type lang string)
-;;  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-;;         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-;;    `(progn
-;;       (defun ,intern-pre (info)
-;;         (let ((file-name (->> info caddr (alist-get :file))))
-;;           (unless file-name
-;;             (setq file-name (make-temp-file "babel-lsp-")))
-;;           (setq buffer-file-name file-name)
-;;           (lsp-deferred)))
-;;       (put ',intern-pre 'function-documentation
-;;            (format "Enable lsp-mode in the buffer of org source block (%s)."
-;;                    (upcase ,lang)))
-;;       (if (fboundp ',edit-pre)
-;;           (advice-add ',edit-pre :after ',intern-pre)
-;;         (progn
-;;           (defun ,edit-pre (info)
-;;             (,intern-pre info))
-;;           (put ',edit-pre 'function-documentation
-;;                (format "Prepare local buffer environment for org source block (%s)."
-;;                        (upcase ,lang))))))))
-;;(defvar org-babel-lang-list
-;;  '("go" "python" "ipython" "bash" "sh"))
-;;(dolist (lang org-babel-lang-list)
-;;  (eval `(lsp-org-babel-enable ,lang)))
-
-;;(cl-defmacro lsp-org-babel-enable (lang)
-;;  "Support LANG in org source code block."
-;;  (setq centaur-lsp 'lsp-mode)
-;;  (cl-check-type lang string)
-;;  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
-;;         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
-;;    `(progn
-;;       (defun ,intern-pre (info)
-;;         (let ((file-name (->> info caddr (alist-get :file))))
-;;           (unless file-name
-;;             (setq file-name (make-temp-file "babel-lsp-")))
-;;           (setq buffer-file-name file-name)
-;;           (lsp-deferred)))
-;;       (put ',intern-pre 'function-documentation
-;;            (format "Enable lsp-mode in the buffer of org source block (%s)."
-;;                    (upcase ,lang)))
-;;       (if (fboundp ',edit-pre)
-;;           (advice-add ',edit-pre :after ',intern-pre)
-;;         (progn
-;;           (defun ,edit-pre (info)
-;;             (,intern-pre info))
-;;           (put ',edit-pre 'function-documentation
-;;                (format "Prepare local buffer environment for org source block (%s)."
-;;                        (upcase ,lang))))))))
-;;(defvar org-babel-lang-list
-;;  '("go" "python" "ipython" "bash" "sh" "rust" "emacs-lisp"))
-;;(dolist (lang org-babel-lang-list)
-;;  (eval `(lsp-org-babel-enable ,lang)))
-
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
 (defadvice! +org-edit-latex-env-after-insert-a (&rest _)
   :after #'org-cdlatex-environment-indent
@@ -724,6 +595,8 @@ Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
 ;; Calibrated based on the TeX font and org-buffer font.
 (plist-put org-format-latex-options :zoom 1.93)
 (after! org (plist-put org-format-latex-options :scale 2.0))
+
+
 
 (after! org
   (setq org-roam-directory  "~/org/roam/")
@@ -821,21 +694,6 @@ Return nil otherwise."
 
     (car (cl-set-difference src-langs header-langs :test #'string=))))
 
-(use-package! org-ol-tree
-  :commands org-ol-tree
-  :config
-  (setq org-ol-tree-ui-icon-set
-        (if (and (display-graphic-p)
-                 (fboundp 'all-the-icons-material))
-            'all-the-icons
-          'unicode))
-  (org-ol-tree-ui--update-icon-set))
-
-(map! :map org-mode-map
-      :after org
-      :localleader
-      :desc "Outline" "O" #'org-ol-tree)
-
 (after! org 
  (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
  )
@@ -930,25 +788,79 @@ Return nil otherwise."
            "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
            ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")))))
 
-\providecolor{url}{HTML}{0077bb}
-\providecolor{link}{HTML}{882255}
-\providecolor{cite}{HTML}{999933}
-\hypersetup{
-  pdfauthor={%a},
-  pdftitle={%t},
-  pdfkeywords={%k},
-  pdfsubject={%d},
-  pdfcreator={%c},
-  pdflang={%L},
-  breaklinks=true,
-  colorlinks=true,
-  linkcolor=link,
-  urlcolor=url,
-  citecolor=cite
-}
-\urlstyle{same}
-
-(add-hook 'org-mode-hook (lambda () (org-modern-mode 1)))
+(use-package! org-modern
+ :hook (org-mode . org-modern-mode)
+ :config
+ (setq
+  org-special-ctrl-a/e t
+  org-insert-heading-respect-content t
+  ;; appearance
+  org-modern-radio-target    '("❰" t "❱")
+  org-modern-internal-target '("↪ " t "") ; TODO: make this not be an emoji, and instead a font lig
+  org-modern-todo t
+  org-modern-todo-faces
+  '(("TODO" :inverse-video t :inherit org-todo)
+   ("PROJ" :inverse-video t :inherit +org-todo-project)
+   ("STRT" :inverse-video t :inherit +org-todo-active)
+   ("[-]"  :inverse-video t :inherit +org-todo-active)
+   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
+   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
+   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
+   ("KILL" :inverse-video t :inherit +org-todo-cancel)
+   ("NO"   :inverse-video t :inherit +org-todo-cancel))
+  org-modern-footnote (cons nil (cadr org-script-display))
+   org-modern-block-name
+   '((t . t)
+     ("src" "»" "«")
+     ("example" "»–" "–«")
+     ("quote" "❝" "❞")
+     ("export" "⏩" "⏪"))
+   org-modern-priority nil
+   org-modern-progress nil
+   ; org-modern-horizontal-rule (make-string 36 ?─)
+   org-modern-horizontal-rule "──────────"
+  ; org-modern-hide-stars "·"
+   org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
+        org-modern-keyword
+        '((t . t)
+          ("title" . "𝙏")
+          ("subtitle" . "𝙩")
+          ("author" . "𝘼")
+          ("email" . #("" 0 1 (display (raise -0.14))))
+          ("date" . "𝘿")
+          ("property" . "☸")
+          ("options" . "⌥")
+          ("startup" . "⏻")
+          ("macro" . "𝓜")
+          ("bind" . #("" 0 1 (display (raise -0.1))))
+          ("bibliography" . "")
+          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
+          ("cite_export" . "⮭")
+          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
+          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
+          ("include" . "⇤")
+          ("setupfile" . "⇚")
+          ("html_head" . "🅷")
+          ("html" . "🅗")
+          ("latex_class" . "🄻")
+          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
+          ("latex_header" . "🅻")
+          ("latex_header_extra" . "🅻⁺")
+          ("latex" . "🅛")
+          ("beamer_theme" . "🄱")
+          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
+          ("beamer_font_theme" . "🄱𝐀")
+          ("beamer_header" . "🅱")
+          ("beamer" . "🅑")
+          ("attr_latex" . "🄛")
+          ("attr_html" . "🄗")
+          ("attr_org" . "⒪")
+          ("call" . #("" 0 1 (display (raise -0.15))))
+          ("name" . "⁍")
+          ("header" . "›")
+          ("caption" . "☰")
+          ("results" . "🠶")))
+  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
 
 (defun insert-previous-daily-link ()
   "Insert link to the previous daily note, if available."
@@ -1023,8 +935,7 @@ Return nil otherwise."
 
 (set-file-template! "\\.pro" :trigger "__" :mode 'prolog-mode)
 
-(when(executable-find "swipl")
-  (after! lsp-mode
+(after! lsp-mode
     (lsp-register-client
      (make-lsp-client
       :new-connection
@@ -1038,7 +949,6 @@ Return nil otherwise."
       :multi-root t
       :server-id 'prolog-ls))
     )
-  )
 (when (not (executable-find "swipl"))
   (warn! "Swipl not found in the system, prolog might not work as expected"))
 
@@ -1080,17 +990,6 @@ Return nil otherwise."
              (read-string "Look up in dictionary: "))
          current-prefix-arg))
   (lexic-search identifier nil nil t))
-
-DIC_FOLDER=${STARDICT_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/stardict}/dic
-if [ ! -d "$DIC_FOLDER" ]; then
-    TMP="$(mktemp -d /tmp/dict-XXX)"
-    cd "$TMP"
-    curl -A "Mozilla/4.0" -o "stardict.tar.gz" "https://tecosaur.com/resources/config/stardict.tar.gz"
-    tar -xf "stardict.tar.gz"
-    rm "stardict.tar.gz"
-    mkdir -p "$DIC_FOLDER"
-    mv * "$DIC_FOLDER"
-fi
 
 (setq-default abbrev-mode t)
 
