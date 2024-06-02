@@ -302,6 +302,17 @@
 (use-package! info-colors
 :commands (info-colors-fontify-node))
 
+(defvar my-window-alpha 100
+  "I like my window transparency opaque by default")
+(defun kb/toggle-window-transparency ()
+  "Toggle transparency."
+  (interactive)
+  (let ((alpha-transparency 75))
+    (pcase (frame-parameter nil 'alpha-background)
+      (alpha-transparency (set-frame-parameter nil 'alpha-background 100))
+      (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
+(global-set-key (kbd "<f12>") 'kb/toggle-window-transparency)
+
 (after! which-key
   (setq which-key-idle-delay 0.2))
 

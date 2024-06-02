@@ -470,6 +470,25 @@ I still have little to no clue how emacs window management works
 
 #+RESULTS:
 
+** Transparency Shenaninigans
+in newer versions of emacs they seem to have added the functionality to have a transparent window. I typically dont mess around with transparent windows but they can be nice to have on occasion. Here I am going to mess around and see if the functionality is worthwile, as well as possibly add a function that lets me update the value in place/toggle it
+
+#+begin_src emacs-lisp
+(defvar my-window-alpha 100
+  "I like my window transparency opaque by default")
+(defun kb/toggle-window-transparency ()
+  "Toggle transparency."
+  (interactive)
+  (let ((alpha-transparency 75))
+    (pcase (frame-parameter nil 'alpha-background)
+      (alpha-transparency (set-frame-parameter nil 'alpha-background 100))
+      (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
+(global-set-key (kbd "<f12>") 'kb/toggle-window-transparency)
+#+end_src
+
+#+RESULTS:
+: kb/toggle-window-transparency
+
 * Configuring Plugins (Misc)
 ** Which-Key
 it's like the one from neovim? (or is it the other way around?)
@@ -1376,7 +1395,7 @@ either that, or just specify options for stuff that needs it
 | /\.doomrc$            | :trigger      | __doomrc                            | :mode         | emacs-lisp-mode   |          |                 |
 | /packages\.el$        | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-packages   | :mode    | emacs-lisp-mode |
 | /doctor\.el$          | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-doctor     | :mode    | emacs-lisp-mode |
-| /test/.+\.el$         | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-test       | :mode    | emacs-lisp-mode |
+| /test/.+\.el$           | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-test       | :mode    | emacs-lisp-mode |
 | \.el$                 | :when         | +file-templates-in-emacs-dirs-p     | :trigger      | __doom-module     | :mode    | emacs-lisp-mode |
 | -test\.el$            | :mode         | emacs-ert-mode                      |               |                   |          |                 |
 | emacs-lisp-mode       | :trigger      | __package                           |               |                   |          |                 |
@@ -1396,7 +1415,7 @@ either that, or just specify options for stuff that needs it
 | scss-mode             |               |                                     |               |                   |          |                 |
 | /main\.java$          | :trigger      | __main                              | :mode         | java-mode         |          |                 |
 | /build\.gradle$       | :trigger      | __build.gradle                      | :mode         | android-mode      |          |                 |
-| /src/.+\.java$        | :mode         | java-mode                           |               |                   |          |                 |
+| /src/.+\.java$          | :mode         | java-mode                           |               |                   |          |                 |
 | /package\.json$       | :trigger      | __package.json                      | :mode         | json-mode         |          |                 |
 | /bower\.json$         | :trigger      | __bower.json                        | :mode         | json-mode         |          |                 |
 | /gulpfile\.js$        | :trigger      | __gulpfile.js                       | :mode         | js-mode           |          |                 |
@@ -1413,7 +1432,7 @@ either that, or just specify options for stuff that needs it
 | \.class\.php$         | :trigger      | __.class.php                        | :mode         | php-mode          |          |                 |
 | php-mode              |               |                                     |               |                   |          |                 |
 | python-mode           |               |                                     |               |                   |          |                 |
-| /lib/.+\.rb$          | :trigger      | __module                            | :mode         | ruby-mode         | :project | t               |
+| /lib/.+\.rb$            | :trigger      | __module                            | :mode         | ruby-mode         | :project | t               |
 | /spec_helper\.rb$     | :trigger      | __helper                            | :mode         | rspec-mode        | :project | t               |
 | _spec\.rb$            | :mode         | rspec-mode                          | :project      | t                 |          |                 |
 | /\.rspec$             | :trigger      | __.rspec                            | :mode         | rspec-mode        | :project | t               |
