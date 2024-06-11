@@ -598,7 +598,6 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t)))
 (setq org-latex-preview-preamble
       (concat
-       <<grab("latex-default-snippet-preamble")>>
        "\n% Custom font\n\\usepackage{arev}\n\n"
        ;<<grab("latex-maths-conveniences")>>))
        ))
@@ -606,8 +605,6 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 ;; Calibrated based on the TeX font and org-buffer font.
 (plist-put org-format-latex-options :zoom 1.93)
 (after! org (plist-put org-format-latex-options :scale 2.0))
-
-
 
 (after! org
   (setq org-roam-directory  "~/org/roam/")
@@ -705,12 +702,200 @@ Return nil otherwise."
 
     (car (cl-set-difference src-langs header-langs :test #'string=))))
 
+(defvar +org-plot-term-size '(1050 . 650)
+  "The size of the GNUPlot terminal, in the form (WIDTH . HEIGHT).")
+
+(after! org-plot
+  (defun +org-plot-generate-theme (_type)
+    "Use the current Doom theme colours to generate a GnuPlot preamble."
+    (format "
+fgt = \"textcolor rgb '%s'\" # foreground text
+fgat = \"textcolor rgb '%s'\" # foreground alt text
+fgl = \"linecolor rgb '%s'\" # foreground line
+fgal = \"linecolor rgb '%s'\" # foreground alt line
+
+# foreground colors
+set border lc rgb '%s'
+# change text colors of  tics
+set xtics @fgt
+set ytics @fgt
+# change text colors of labels
+set title @fgt
+set xlabel @fgt
+set ylabel @fgt
+# change a text color of key
+set key @fgt
+
+# line styles
+set linetype 1 lw 2 lc rgb '%s' # red
+set linetype 2 lw 2 lc rgb '%s' # blue
+set linetype 3 lw 2 lc rgb '%s' # green
+set linetype 4 lw 2 lc rgb '%s' # magenta
+set linetype 5 lw 2 lc rgb '%s' # orange
+set linetype 6 lw 2 lc rgb '%s' # yellow
+set linetype 7 lw 2 lc rgb '%s' # teal
+set linetype 8 lw 2 lc rgb '%s' # violet
+
+# border styles
+set tics out nomirror
+set border 3
+
+# palette
+set palette maxcolors 8
+set palette defined ( 0 '%s',\
+1 '%s',\
+2 '%s',\
+3 '%s',\
+4 '%s',\
+5 '%s',\
+6 '%s',\
+7 '%s' )
+"
+            (doom-color 'fg)
+            (doom-color 'fg-alt)
+            (doom-color 'fg)
+            (doom-color 'fg-alt)
+            (doom-color 'fg)
+            ;; colours
+            (doom-color 'red)
+            (doom-color 'blue)
+            (doom-color 'green)
+            (doom-color 'magenta)
+            (doom-color 'orange)
+            (doom-color 'yellow)
+            (doom-color 'teal)
+            (doom-color 'violet)
+            ;; duplicated
+            (doom-color 'red)
+            (doom-color 'blue)
+            (doom-color 'green)
+            (doom-color 'magenta)
+            (doom-color 'orange)
+            (doom-color 'yellow)
+            (doom-color 'teal)
+            (doom-color 'violet)))
+
+  (defun +org-plot-gnuplot-term-properties (_type)
+    (format "background rgb '%s' size %s,%s"
+            (doom-color 'bg) (car +org-plot-term-size) (cdr +org-plot-term-size)))
+
+  (setq org-plot/gnuplot-script-preamble #'+org-plot-generate-theme)
+  (setq org-plot/gnuplot-term-extra #'+org-plot-gnuplot-term-properties))
+
 (after! org 
  (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
  )
 
+(use-package! ox-latex
+  :config
+
+  ;; Default packages
+(setq org-export-headline-levels 8
+        org-latex-default-packages-alist
+        '(("AUTO" "inputenc" t ("pdflatex" "lualatex"))
+          ("T1" "fontenc" t ("pdflatex"))
+          ;; Microtype
+          ;; - pdflatex: full microtype features, fast, however no fontspec
+          ;; - lualatex: good microtype feature support, however slow to compile
+          ;; - xelatex: only protrusion support, fast compilation
+          ("activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10"
+           "microtype" nil ("pdflatex"))
+          ("activate={true,nocompatibility},final,tracking=true,factor=1100,stretch=10,shrink=10"
+           "microtype" nil ("lualatex"))
+          ("protrusion={true,nocompatibility},final,factor=1100,stretch=10,shrink=10"
+           "microtype" nil ("xelatex"))
+          ("dvipsnames,svgnames" "xcolor" nil)  ; Include xcolor package
+          ("headings=optiontoheadandtoc,footings=optiontofootandtoc,headlines=optiontoheadandtoc"
+           "scrextend" nil)  ; Include scrextend package
+          ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil))))
+
+(after! ox
+ ;; Additional LaTeX classes
+  (after! ox
+    (add-to-list 'org-latex-classes
+               '("article"
+                 "\\documentclass{article}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+    (add-to-list 'org-latex-classes
+                 '("koma-letter" "\\documentclass[11pt]{scrletter}"
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+    (add-to-list 'org-latex-classes
+                 '("koma-article" "\\documentclass[11pt]{scrartcl}"
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                   ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                   ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+    (add-to-list 'org-latex-classes
+                 '("koma-report" "\\documentclass[11pt]{scrreprt}"
+                   ("\\part{%s}" . "\\part*{%s}")
+                   ("\\chapter{%s}" . "\\chapter*{%s}")
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+    (add-to-list 'org-latex-classes
+                 '("koma-book" "\\documentclass[11pt]{scrbook}"
+                   ("\\part{%s}" . "\\part*{%s}")
+                   ("\\chapter{%s}" . "\\chapter*{%s}")
+                   ("\\section{%s}" . "\\section*{%s}")
+                   ("\\subsection{%s}" . "\\subsection*{%s}")
+                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+
+  ;; Table of contents customization
+(after! org
+  ;; Customize table of contents style
+  (setq org-latex-custom-id '("\\usepackage{tocloft}"
+                              "\\setlength{\\cftbeforesecskip}{1ex}"
+                              "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
+                              "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}")))
+
+(after! org
+  ;; Define common style for table of contents
+  (setq common-toc-style '("\\usepackage{tocloft}"
+                           "\\setlength{\\cftbeforesecskip}{1ex}"
+                           "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
+                           "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+                           ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")))
+  ;; Apply the common style to all classes
+  (dolist (class org-latex-classes)
+    (let ((class-name (car class))
+          (class-content (cdr class)))
+      ;; Append common style to each class content
+      (setcdr class (append class-content common-toc-style)))))
+
+(after! org
+  ;; Customize specific class style for table of contents
+  (setq org-latex-toc-command "\\tableofcontents\\newpage"))
+
+(after! org
+  (add-to-list 'org-latex-classes
+        '(("report"
+           "\\documentclass{report}"
+           ("\\chapter{%s}" . "\\chapter*{%s}")
+           ("\\section{%s}" . "\\section*{%s}")
+           ("\\subsection{%s}" . "\\subsection*{%s}")
+           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+           ("\\paragraph{%s}" . "\\paragraph*{%s}")
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))))
+
+(after! ox-latex
+  (setq org-latex-src-block-backend 'engraved))
+
+(use-package! ox-chameleon
+  :after ox
+  :config
+  (setq! ox-chameleon-engrave-theme 'doom-gruvbox))
+
 ;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
-(setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
+(setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%f %o"))
 
 (defun +org-export-latex-fancy-item-checkboxes (text backend info)
   (when (org-export-derived-backend-p backend 'latex)
@@ -727,77 +912,93 @@ Return nil otherwise."
 (add-to-list 'org-export-filter-item-functions
              '+org-export-latex-fancy-item-checkboxes)
 
-(after! org
-  (setq org-latex-custom-id '("\\usepackage{tocloft}"
-                              "\\setlength{\\cftbeforesecskip}{1ex}"
-                              "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
-                              "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}")))
+(defvar org-latex-cover-page 'auto
+  "When t, use a cover page by default.
+When auto, use a cover page when the document's wordcount exceeds
+`org-latex-cover-page-wordcount-threshold'.
 
-(after! org
-(require 'ox-latex)
-(unless (boundp 'org-latex-classes)
-  (setq org-latex-classes nil))
-(add-to-list 'org-latex-classes
-             '("article"
-               "\\documentclass{article}"
-               ("\\section{%s}" . "\\section*{%s}")
-               ("\\subsection{%s}" . "\\subsection*{%s}")
-               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-               ("\\paragraph{%s}" . "\\paragraph*{%s}")
-               ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
-           "\\usepackage{tocloft}"
-           "\\setlength{\\cftbeforesecsckip}{1ex}"
-           "\\setlength{\\cftbeforesubsecskip{0.5ex}"
-           "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
-           ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")
-           "\\newpage")
-"\\usepackage[utf8]{inputenc}
-\\usepackage[T1]{fontenc}
-\\usepackage{fixltx2e}
-\\usepackage{graphicx}
-\\usepackage{longtable}
-\\usepackage{float}
-\\usepackage{wrapfig}
-\\usepackage{rotating}
-\\usepackage[normalem]{ulem}
-\\usepackage{amsmath}
-\\usepackage{textcomp}
-\\usepackage{marvosym}
-\\usepackage{wasysym}
-\\usepackage{amssymb}
-\\usepackage{hyperref}
-\\usepackage{mathpazo}
-\\usepackage{color}
-\\usepackage{enumerate}
-\\definecolor{bg}{rgb}{0.95,0.95,0.95}
-\\tolerance=1000
-      [NO-DEFAULT-PACKAGES]
-      [PACKAGES]
-      [EXTRA]
-\\linespread{1.1}
-\\hypersetup{pdfborder=0 0 0}"
+Set with #+option: coverpage:{yes,auto,no} in org buffers.")
+(defvar org-latex-cover-page-wordcount-threshold 5000
+  "Document word count at which a cover page will be used automatically.
+This condition is applied when cover page option is set to auto.")
+(defvar org-latex-subtitle-coverpage-format "\\\\\\bigskip\n\\LARGE\\mdseries\\itshape\\color{black!80} %s\\par"
+  "Variant of `org-latex-subtitle-format' to use with the cover page.")
+(defvar org-latex-cover-page-maketitle
+  "\\usepackage{tikz}
+\\usetikzlibrary{shapes.geometric}
+\\usetikzlibrary{calc}
 
-                )
+\\newsavebox\\orgicon
+\\begin{lrbox}{\\orgicon}
+  \\begin{tikzpicture}[y=0.80pt, x=0.80pt, inner sep=0pt, outer sep=0pt]
+    \\path[fill=black!6] (16.15,24.00) .. controls (15.58,24.00) and (13.99,20.69) .. (12.77,18.06)arc(215.55:180.20:2.19) .. controls (12.33,19.91) and (11.27,19.09) .. (11.43,18.05) .. controls (11.36,18.09) and (10.17,17.83) .. (10.17,17.82) .. controls (9.94,18.75) and (9.37,19.44) .. (9.02,18.39) .. controls (8.32,16.72) and (8.14,15.40) .. (9.13,13.80) .. controls (8.22,9.74) and (2.18,7.75) .. (2.81,4.47) .. controls (2.99,4.47) and (4.45,0.99) .. (9.15,2.41) .. controls (14.71,3.99) and (17.77,0.30) .. (18.13,0.04) .. controls (18.65,-0.49) and (16.78,4.61) .. (12.83,6.90) .. controls (10.49,8.18) and (11.96,10.38) .. (12.12,11.15) .. controls (12.12,11.15) and (14.00,9.84) .. (15.36,11.85) .. controls (16.58,11.53) and (17.40,12.07) .. (18.46,11.69) .. controls (19.10,11.41) and (21.79,11.58) .. (20.79,13.08) .. controls (20.79,13.08) and (21.71,13.90) .. (21.80,13.99) .. controls (21.97,14.75) and (21.59,14.91) .. (21.47,15.12) .. controls (21.44,15.60) and (21.04,15.79) .. (20.55,15.44) .. controls (19.45,15.64) and (18.36,15.55) .. (17.83,15.59) .. controls (16.65,15.76) and (15.67,16.38) .. (15.67,16.38) .. controls (15.40,17.19) and (14.82,17.01) .. (14.09,17.32) .. controls (14.70,18.69) and (14.76,19.32) .. (15.50,21.32) .. controls (15.76,22.37) and (16.54,24.00) .. (16.15,24.00) -- cycle(7.83,16.74) .. controls (6.83,15.71) and (5.72,15.70) .. (4.05,15.42) .. controls (2.75,15.19) and (0.39,12.97) .. (0.02,10.68) .. controls (-0.02,10.07) and (-0.06,8.50) .. (0.45,7.18) .. controls (0.94,6.05) and (1.27,5.45) .. (2.29,4.85) .. controls (1.41,8.02) and (7.59,10.18) .. (8.55,13.80) -- (8.55,13.80) .. controls (7.73,15.00) and (7.80,15.64) .. (7.83,16.74) -- cycle;
+  \\end{tikzpicture}
+\\end{lrbox}
 
-    (setq org-latex-toc-command "\\tableofcontents\\newpage")
-  )
+\\makeatletter
+\\g@addto@macro\\tableofcontents{\\clearpage}
+\\renewcommand\\maketitle{
+  \\thispagestyle{empty}
+  \\hyphenpenalty=10000 % hyphens look bad in titles
+  \\renewcommand{\\baselinestretch}{1.1}
+  \\NewCommandCopy{\\oldtoday}{\\today}
+  \\renewcommand{\\today}{\\LARGE\\number\\year\\\\\\large%
+    \\ifcase \\month \\or Jan\\or Feb\\or Mar\\or Apr\\or May \\or Jun\\or Jul\\or Aug\\or Sep\\or Oct\\or Nov\\or Dec\\fi
+    ~\\number\\day}
+  \\begin{tikzpicture}[remember picture,overlay]
+    %% Background Polygons %%
+    \\foreach \\i in {2.5,...,22} % bottom left
+    {\\node[rounded corners,black!3.5,draw,regular polygon,regular polygon sides=6, minimum size=\\i cm,ultra thick] at ($(current page.west)+(2.5,-4.2)$) {} ;}
+    \\foreach \\i in {0.5,...,22} % top left
+    {\\node[rounded corners,black!5,draw,regular polygon,regular polygon sides=6, minimum size=\\i cm,ultra thick] at ($(current page.north west)+(2.5,2)$) {} ;}
+    \\node[rounded corners,fill=black!4,regular polygon,regular polygon sides=6, minimum size=5.5 cm,ultra thick] at ($(current page.north west)+(2.5,2)$) {};
+    \\foreach \\i in {0.5,...,24} % top right
+    {\\node[rounded corners,black!2,draw,regular polygon,regular polygon sides=6, minimum size=\\i cm,ultra thick] at ($(current page.north east)+(0,-8.5)$) {} ;}
+    \\node[fill=black!3,rounded corners,regular polygon,regular polygon sides=6, minimum size=2.5 cm,ultra thick] at ($(current page.north east)+(0,-8.5)$) {};
+    \\foreach \\i in {21,...,3} % bottom right
+    {\\node[black!3,rounded corners,draw,regular polygon,regular polygon sides=6, minimum size=\\i cm,ultra thick] at ($(current page.south east)+(-1.5,0.75)$) {} ;}
+    \\node[fill=black!3,rounded corners,regular polygon,regular polygon sides=6, minimum size=2 cm,ultra thick] at ($(current page.south east)+(-1.5,0.75)$) {};
+    \\node[align=center, scale=1.4] at ($(current page.south east)+(-1.5,0.75)$) {\\usebox\\orgicon};
+    %% Text %%
+    \\node[left, align=right, black, text width=0.8\\paperwidth, minimum height=3cm, rounded corners,font=\\Huge\\bfseries] at ($(current page.north east)+(-2,-8.5)$)
+    {\\@title};
+    \\node[left, align=right, black, text width=0.8\\paperwidth, minimum height=2cm, rounded corners, font=\\Large] at ($(current page.north east)+(-2,-11.8)$)
+    {\\scshape \\@author};
+    \\renewcommand{\\baselinestretch}{0.75}
+    \\node[align=center,rounded corners,fill=black!3,text=black,regular polygon,regular polygon sides=6, minimum size=2.5 cm,inner sep=0, font=\\Large\\bfseries ] at ($(current page.west)+(2.5,-4.2)$)
+    {\\@date};
+  \\end{tikzpicture}
+  \\let\\today\\oldtoday
+  \\clearpage}
+\\makeatother"
+  "LaTeX preamble snippet that sets \\maketitle to produce a cover page.")
 
-(after! org
-(setq org-latex-classes
-      '(("report"
-           "\\documentclass{report}"
-           ("\\chapter{%s}" . "\\chapter*{%s}")
-           ("\\section{%s}" . "\\section*{%s}")
-           ("\\subsection{%s}" . "\\subsection*{%s}")
-           ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-           ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}")
-           ;; Customize the position of the "Contents" title
-           "\\usepackage{tocloft}"
-           "\\setlength{\\cftbeforesecsckip}{1ex}"
-           "\\setlength{\\cftbeforesubsecskip{0.5ex}"
-           "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
-           ("\\tableofcontents" . "\\tableofcontents\\thispagestyle{empty}\\vspace*{\\fill}\\clearpage")))))
+(eval '(cl-pushnew '(:latex-cover-page nil "coverpage" org-latex-cover-page)
+                   (org-export-backend-options (org-export-get-backend 'latex))))
+
+(defun org-latex-cover-page-p ()
+  "Whether a cover page should be used when exporting this Org file."
+  (pcase (or (car
+              (delq nil
+                    (mapcar
+                     (lambda (opt-line)
+                       (plist-get (org-export--parse-option-keyword opt-line 'latex) :latex-cover-page))
+                     (cdar (org-collect-keywords '("OPTIONS"))))))
+             org-latex-cover-page)
+    ((or 't 'yes) t)
+    ('auto (when (> (count-words (point-min) (point-max)) org-latex-cover-page-wordcount-threshold) t))
+    (_ nil)))
+
+(defadvice! org-latex-set-coverpage-subtitle-format-a (contents info)
+  "Set the subtitle format when a cover page is being used."
+  :before #'org-latex-template
+  (when (org-latex-cover-page-p)
+    (setf info (plist-put info :latex-subtitle-format org-latex-subtitle-coverpage-format))))
+
+(setq org-latex-custom-id ’("\\usepackage{tocloft}"
+"\\setlength{\\cftbeforesecskip}{1ex}"
+"\\setlength{\\cftbeforesubsecskip}{0.5ex}"
+"\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"))
 
 (use-package! org-modern
  :hook (org-mode . org-modern-mode)

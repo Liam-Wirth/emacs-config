@@ -105,11 +105,41 @@
 
 (package! lexic)
 (package! string-inflection)
+(package! org :recipe
+  (:host nil :repo "https://code.tecosaur.net/mirrors/org-mode.git" :remote "mirror" :fork
+         (:host nil :repo "https://code.tecosaur.net/tec/org-mode.git" :branch "dev" :remote "tecosaur")
+         :files
+         (:defaults "etc")
+         :build t :pre-build
+         (with-temp-file "lisp/org-version.el"
+           (require 'lisp-mnt)
+           (let
+               ((version
+                 (with-temp-buffer
+                   (insert-file-contents "lisp/org.el")
+                   (lm-header "version")))
+                (git-version
+                 (string-trim
+                  (with-temp-buffer
+                    (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
+                    (buffer-string)))))
+             (insert
+              (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
+              (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
+              "(provide 'org-version)\n"))))
+  :pin nil)
 
+(unpin! org) ; there be bugs
+(package! org-contrib
+  ;; The `sr.ht' repo has been a bit flaky as of late.
+  :recipe (:host github :repo "emacsmirror/org-contrib"
+           :files ("lisp/*.el"))
+  :pin "351c71397d893d896a47ad7e280607b4d59b84e4")
 ;; Org Stuff
 (package! org-roam-ui)
 (package! org-fragtog)
 (package! org-auto-tangle)
+(package! engrave-faces)
 (package! org-web-tools)
 (package! org-roam)
 (package! org-modern)
@@ -132,6 +162,11 @@
 (package! zoxide)
 (package! svg-tag-mode
   :recipe (:host github :repo "rougier/svg-tag-mode"))
+
+(package! ox-chameleon
+  :recipe (:host github :repo "tecosaur/ox-chameleon"))
+
+
 (provide 'packages)
 
 

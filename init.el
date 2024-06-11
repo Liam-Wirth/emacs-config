@@ -212,3 +212,5 @@
        (default +bindings +smartparens))
 (custom-set-variables
  '(display-battery-mode 1))
+
+
