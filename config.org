@@ -829,21 +829,21 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
 
 ** Babel
 *** Default Header Args
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
 (setq org-babel-default-header-args
       '((:session . "none")
         (:results . "replace")
         (:exports . "code")
         (:cache . "no")
         (:noweb . "no")
-        (:hlines . "no")
+        (:hlines . "yes")
         (:tangle . "no")
         (:comments . "link")))
 
 #+END_SRC
 
 #+RESULTS:
-: ((:session . none) (:results . replace) (:exports . code) (:cache . no) (:noweb . no) (:hlines . no) (:tangle . no) (:comments . link))
+: ((:session . none) (:results . replace) (:exports . code) (:cache . no) (:noweb . no) (:hlines . yes) (:tangle . no) (:comments . link))
 
 *** Load Languages:
 #+begin_src emacs-lisp
@@ -855,9 +855,21 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
    '(python . t)
    '(latex . t)
    '(rust . t)
-   '(c . t)
+   '(C . t)
    '(cpp . t)))
 #+end_src
+
+#+RESULTS:
+
+#+begin_src emacs-lisp
+(require 'org)
+(require 'ob)
+
+(require 'ob-C)
+#+end_src
+
+#+RESULTS:
+: ob-C
 
 ** Org-Latex
 #+begin_src emacs-lisp
@@ -891,6 +903,9 @@ Defining our font size:
 (plist-put org-format-latex-options :zoom 1.93)
 (after! org (plist-put org-format-latex-options :scale 2.0))
 #+end_src
+
+#+RESULTS:
+| :foreground | default | :background | default | :scale | 2.0 | :html-foreground | Black | :html-background | Transparent | :html-scale | 1.0 | :matchers | (begin $1 $ $$ \( \[) | :zoom | 1.93 |
 
 ** Org-Roam
 #+begin_src emacs-lisp
@@ -1226,14 +1241,6 @@ yanked this from my .custom thing cause I want it to setup here
 
 #+end_src
 
-#+RESULTS: configuring document classes
-| (report \documentclass{report} (\chapter{%s} . \chapter*{%s}) (\section{%s} . \section*{%s}) (\subsection{%s} . \subsection*{%s}) (\subsubsection{%s} . \subsubsection*{%s}) (\paragraph{%s} . \paragraph*{%s}) (\subparagraph{%s} . \subparagraph*{%s})) |                                 |                                |                                      |                                            |                                            |                                            |                                          |                                    |                                         |                                            |                                                                                     |                                                                                     |
-| koma-book                                                                                                                                                                                                                                                 | \documentclass[11pt]{scrbook}   | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s})       | (\subsubsection{%s} . \subsubsection*{%s}) | \usepackage{tocloft}                     | \setlength{\cftbeforesecskip}{1ex} | \setlength{\cftbeforesubsecskip}{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} | (\tableofcontents . \tableofcontents\thispagestyle{empty}\vspace*{\fill}\clearpage) |                                                                                     |
-| koma-report                                                                                                                                                                                                                                               | \documentclass[11pt]{scrreprt}  | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s})       | (\subsubsection{%s} . \subsubsection*{%s}) | \usepackage{tocloft}                     | \setlength{\cftbeforesecskip}{1ex} | \setlength{\cftbeforesubsecskip}{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} | (\tableofcontents . \tableofcontents\thispagestyle{empty}\vspace*{\fill}\clearpage) |                                                                                     |
-| koma-article                                                                                                                                                                                                                                              | \documentclass[11pt]{scrartcl}  | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s})         | (\subparagraph{%s} . \subparagraph*{%s})   | \usepackage{tocloft}                     | \setlength{\cftbeforesecskip}{1ex} | \setlength{\cftbeforesubsecskip}{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} | (\tableofcontents . \tableofcontents\thispagestyle{empty}\vspace*{\fill}\clearpage) |                                                                                     |
-| koma-letter                                                                                                                                                                                                                                               | \documentclass[11pt]{scrletter} | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s})         | (\subparagraph{%s} . \subparagraph*{%s})   | \usepackage{tocloft}                     | \setlength{\cftbeforesecskip}{1ex} | \setlength{\cftbeforesubsecskip}{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} | (\tableofcontents . \tableofcontents\thispagestyle{empty}\vspace*{\fill}\clearpage) |                                                                                     |
-| report                                                                                                                                                                                                                                                    | \documentclass{report}          | (\chapter{%s} . \chapter*{%s}) | (\section{%s} . \section*{%s})       | (\subsection{%s} . \subsection*{%s})       | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s})         | (\subparagraph{%s} . \subparagraph*{%s}) | \usepackage{tocloft}               | \setlength{\cftbeforesecskip}{1ex}      | \setlength{\cftbeforesubsecskip}{0.5ex}    | \setlength{\cftbeforesubsubsecskip}{0.5ex}                                          | (\tableofcontents . \tableofcontents\thispagestyle{empty}\vspace*{\fill}\clearpage) |
-
 #+RESULTS:
 | koma-book    | \documentclass[11pt]{scrbook}        | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) |
 | koma-report  | \documentclass[11pt]{scrreprt}       | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) |
@@ -1397,7 +1404,8 @@ This condition is applied when cover page option is set to auto.")
   \\end{tikzpicture}
   \\let\\today\\oldtoday
   \\clearpage}
-\\makeatother"
+\\makeatother
+\\newpage"
   "LaTeX preamble snippet that sets \\maketitle to produce a cover page.")
 
 (eval '(cl-pushnew '(:latex-cover-page nil "coverpage" org-latex-cover-page)
@@ -1423,11 +1431,14 @@ This condition is applied when cover page option is set to auto.")
     (setf info (plist-put info :latex-subtitle-format org-latex-subtitle-coverpage-format))))
 #+end_src
 
+#+RESULTS:
+
 #+begin_src emacs-lisp
 (setq org-latex-custom-id ’("\\usepackage{tocloft}"
 "\\setlength{\\cftbeforesecskip}{1ex}"
 "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
-"\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"))
+"\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+"\\newpage"))
 #+end_src
 #+RESULTS:
 
@@ -1514,7 +1525,7 @@ the key to it looking *pretty*
 #+end_src
 
 #+RESULTS:
-| org-modern-mode | er/add-org-mode-expansions | (closure (t) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+| org-modern-mode | turn-on-org-cdlatex | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | (closure (org--rds reftex-docstruct-symbol org--single-lines-list-is-paragraph org-element-greater-elements org-agenda-restrict-end org-agenda-restrict-begin org-agenda-restrict visual-fill-column-width org-clock-history org-agenda-current-date org-with-time org-defdecode org-def org-read-date-inactive org-ans2 org-ans1 org-columns-current-fmt-compiled org-clock-current-task org-clock-effort org-agenda-skip-function org-agenda-skip-comment-trees org-agenda-archives-mode org-end-time-was-given org-time-was-given org-log-note-extra org-log-note-purpose org-log-post-message org-last-inserted-timestamp org-last-changed-timestamp org-entry-property-inherited-from org-state org-agenda-headline-snapshot-before-repeat org-agenda-buffer-name org-agenda-start-on-weekday org-agenda-buffer-tmp-name org-priority-regexp org-mode-abbrev-table org-mode-syntax-table org-element-cache-persistent org-tbl-menu org-org-menu org-struct-menu org-entities org-last-state org-id-track-globally org-clock-start-time texmathp-why remember-data-file org-agenda-tags-todo-honor-ignore-options calc-embedded-open-mode calc-embedded-open-formula calc-embedded-close-formula align-mode-rules-list org-emphasis-alist org-emphasis-regexp-components org-export-registered-backends org-babel-load-languages org-id-overriding-file-name org-indent-indentation-per-level org-element--timestamp-regexp org-element-cache-map-continue-from org-element-paragraph-separate org-agenda-buffer-name org-inlinetask-min-level t) nil (add-hook 'change-major-mode-hook 'org-fold-show-all 'append 'local)) | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
 
 ** Org-Agenda and Dailies
 *** Define My Daily Template:

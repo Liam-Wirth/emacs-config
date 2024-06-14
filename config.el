@@ -574,7 +574,7 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
         (:exports . "code")
         (:cache . "no")
         (:noweb . "no")
-        (:hlines . "no")
+        (:hlines . "yes")
         (:tangle . "no")
         (:comments . "link")))
 
@@ -583,10 +583,16 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
  '((dot . t)
    '(emacs-lisp . t)
    '(mips . t)
+   '(python . t)
    '(latex . t)
    '(rust . t)
-   '(c . t)
+   '(C . t)
    '(cpp . t)))
+
+(require 'org)
+(require 'ob)
+
+(require 'ob-C)
 
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
 (defadvice! +org-edit-latex-env-after-insert-a (&rest _)
@@ -970,7 +976,8 @@ This condition is applied when cover page option is set to auto.")
   \\end{tikzpicture}
   \\let\\today\\oldtoday
   \\clearpage}
-\\makeatother"
+\\makeatother
+\\newpage"
   "LaTeX preamble snippet that sets \\maketitle to produce a cover page.")
 
 (eval '(cl-pushnew '(:latex-cover-page nil "coverpage" org-latex-cover-page)
@@ -998,7 +1005,8 @@ This condition is applied when cover page option is set to auto.")
 (setq org-latex-custom-id ’("\\usepackage{tocloft}"
 "\\setlength{\\cftbeforesecskip}{1ex}"
 "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
-"\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"))
+"\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+"\\newpage"))
 
 (use-package! org-modern
  :hook (org-mode . org-modern-mode)

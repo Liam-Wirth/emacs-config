@@ -36,6 +36,7 @@
      ("" "fancyhdr" nil nil)
      ("" "color" nil nil)))
  '(org-pretty-entities t)
+ '(org-safe-remote-resources '("\\`https://img\\.youtube\\.com\\(?:/\\|\\'\\)"))
  '(org-toc-follow-mode t)
  '(org-toc-info-mode t))
 (custom-set-faces
