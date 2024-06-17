@@ -1,5 +1,5 @@
-./config.latex
-./config.LaTex
-./config.shell
-./config.toc
-./config.tex
+config.latex
+config.LaTex
+config.shell
+config.toc
+config.tex
