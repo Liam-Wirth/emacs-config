@@ -492,8 +492,8 @@
           ("results" . "🠶")))
   (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
 
-(after! org (add-hook 'org-mode-hook #'org-modern-mode))
 )
+(after! org (add-hook 'org-mode-hook #'org-modern-mode))
 
 (use-package! org
 :config
@@ -843,7 +843,6 @@ set palette defined ( 0 '%s',\
  (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
  )
 
-(after! org
 (use-package! ox-latex
   :config
 
@@ -865,9 +864,8 @@ set palette defined ( 0 '%s',\
           ("dvipsnames,svgnames" "xcolor" nil)  ; Include xcolor package
           ("headings=optiontoheadandtoc,footings=optiontofootandtoc,headlines=optiontoheadandtoc"
            "scrextend" nil)  ; Include scrextend package
-          ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil)))))
+          ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil))))
 
-(after! org
 (after! ox
  ;; Additional LaTeX classes
   (after! ox
@@ -944,7 +942,7 @@ set palette defined ( 0 '%s',\
            ("\\subsection{%s}" . "\\subsection*{%s}")
            ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
            ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))))))
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))))
 
 (after! ox-latex
   (setq org-latex-src-block-backend 'engraved))
