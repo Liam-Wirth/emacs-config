@@ -473,7 +473,7 @@ in newer versions of emacs they seem to have added the functionality to have a t
 (defun kb/toggle-window-transparency ()
   "Toggle transparency."
   (interactive)
-  (let ((alpha-transparency 75))
+  (let ((alpha-transparency 0))
     (pcase (frame-parameter nil 'alpha-background)
       (alpha-transparency (set-frame-parameter nil 'alpha-background 100))
       (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
@@ -530,9 +530,6 @@ everyone MUST KNOW I'M USING EMACS (as well as vim)
          (set-default-toplevel-value symbol value)))
 
 #+end_src
-
-#+RESULTS:
-: variable-pitch-serif-font
 
 (lifted straight from the tecosaur config)
 #+begin_src emacs-lisp
@@ -619,29 +616,96 @@ This is largely for session management
   (add-hook 'writeroom-mode-disable-hook #'+zen-nonprose-org-h))
 #+end_src
 
-#+RESULTS:
-
 * Org
 the swag
 
 ** Hooks
-#+begin_src emacs-lisp
-(defun nicer-org ()
-  (progn
-  (+org-pretty-mode 1)
-  (mixed-pitch-mode 1)
-  (hl-line-mode -1)
-  (display-line-numbers-mode -1)
-    (org-modern-mode -1)
-    (org-modern-mode 1)
-  ; (olivetti-mode 1)
-  ;(org-Num-mode 1)
-  ;(org-superstar-mode -1)
-  ; (org-indent-mode -1)
-  ))
-(add-hook! 'org-mode-hook  #'nicer-org)
-(add-hook! 'org-mode        #'nicer-org) ; NOTE: May be brokie
+*** Org Modern Hooks
+the key to it looking *pretty*
+#+begin_src emacs-lisp :tangle yes
+(after! org
+  (use-package! org-modern
+ :config
+ (setq
+  org-special-ctrl-a/e t
+  org-insert-heading-respect-content t
+  ;; appearance
+  org-modern-radio-target    '("❰" t "❱")
+  org-modern-internal-target '("↪ " t "") ; TODO: make this not be an emoji, and instead a font lig
+  org-modern-todo t
+  org-modern-todo-faces
+  '(("TODO" :inverse-video t :inherit org-todo)
+   ("PROJ" :inverse-video t :inherit +org-todo-project)
+   ("STRT" :inverse-video t :inherit +org-todo-active)
+   ("[-]"  :inverse-video t :inherit +org-todo-active)
+   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
+   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
+   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
+   ("KILL" :inverse-video t :inherit +org-todo-cancel)
+   ("NO"   :inverse-video t :inherit +org-todo-cancel))
+  org-modern-footnote (cons nil (cadr org-script-display))
+   org-modern-block-name
+   '((t . t)
+     ("src" "»" "«")
+     ("example" "»–" "–«")
+     ("quote" "❝" "❞")
+     ("export" "⏩" "⏪"))
+   org-modern-priority nil
+   org-modern-progress nil
+   ; org-modern-horizontal-rule (make-string 36 ?─)
+   org-modern-horizontal-rule "──────────"
+  ; org-modern-hide-stars "·"
+   org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
+        org-modern-keyword
+        '((t . t)
+          ("title" . "𝙏")
+          ("subtitle" . "𝙩")
+          ("author" . "𝘼")
+          ("email" . #("" 0 1 (display (raise -0.14))))
+          ("date" . "𝘿")
+          ("property" . "☸")
+          ("options" . "⌥")
+          ("startup" . "⏻")
+          ("macro" . "𝓜")
+          ("bind" . #("" 0 1 (display (raise -0.1))))
+          ("bibliography" . "")
+          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
+          ("cite_export" . "⮭")
+          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
+          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
+          ("include" . "⇤")
+          ("setupfile" . "⇚")
+          ("html_head" . "🅷")
+          ("html" . "🅗")
+          ("latex_class" . "🄻")
+          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
+          ("latex_header" . "🅻")
+          ("latex_header_extra" . "🅻⁺")
+          ("latex" . "🅛")
+          ("beamer_theme" . "🄱")
+          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
+          ("beamer_font_theme" . "🄱𝐀")
+          ("beamer_header" . "🅱")
+          ("beamer" . "🅑")
+          ("attr_latex" . "🄛")
+          ("attr_html" . "🄗")
+          ("attr_org" . "⒪")
+          ("call" . #("" 0 1 (display (raise -0.15))))
+          ("name" . "⁍")
+          ("header" . "›")
+          ("caption" . "☰")
+          ("results" . "🠶")))
+  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
+
+(after! org (add-hook 'org-mode-hook #'org-modern-mode))
+)
+
+
 #+end_src
+
+#+RESULTS:
+| org-modern-mode | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | (closure (org--rds reftex-docstruct-symbol org--single-lines-list-is-paragraph org-element-greater-elements org-agenda-restrict-end org-agenda-restrict-begin org-agenda-restrict visual-fill-column-width org-clock-history org-agenda-current-date org-with-time org-defdecode org-def org-read-date-inactive org-ans2 org-ans1 org-columns-current-fmt-compiled org-clock-current-task org-clock-effort org-agenda-skip-function org-agenda-skip-comment-trees org-agenda-archives-mode org-end-time-was-given org-time-was-given org-log-note-extra org-log-note-purpose org-log-post-message org-last-inserted-timestamp org-last-changed-timestamp org-entry-property-inherited-from org-state org-agenda-headline-snapshot-before-repeat org-agenda-buffer-name org-agenda-start-on-weekday org-agenda-buffer-tmp-name org-priority-regexp org-mode-abbrev-table org-mode-syntax-table org-element-cache-persistent org-tbl-menu org-org-menu org-struct-menu org-entities org-last-state org-id-track-globally org-clock-start-time texmathp-why remember-data-file org-agenda-tags-todo-honor-ignore-options calc-embedded-open-mode calc-embedded-open-formula calc-embedded-close-formula align-mode-rules-list org-emphasis-alist org-emphasis-regexp-components org-export-registered-backends org-babel-load-languages org-id-overriding-file-name org-indent-indentation-per-level org-element--timestamp-regexp org-element-cache-map-continue-from org-element-paragraph-separate org-agenda-buffer-name org-inlinetask-min-level t) nil (add-hook 'change-major-mode-hook 'org-fold-show-all 'append 'local)) | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
+
 
 ** Org Variables
 #+begin_src emacs-lisp
@@ -650,33 +714,10 @@ the swag
 (setq org-fontify-quote-and-verse-blocks t
 org-highlight-latex-and-related '(native script entities)
 org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
+;(setq org-export-directory "~/org/exported")
 
 (require 'org-src)
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t))))
-#+end_src
-
-#+RESULTS:
-: t
-
-#+begin_src emacs-lisp
-(after! org
-;; This function is nice because it helps keep whatever directory I'm working in clean. I like to do homework in org roam as well, and don't want that directory to be filled with a bunch of .tex and .pdf files
-
-(defadvice org-export-output-file-name (before org-add-export-dir activate)
-  "Modifies org-export to place exported files in a different directory"
-  (when (not pub-dir)
-      (setq pub-dir "~/org/exported/")
-      (when (not (file-directory-p pub-dir))
-       (make-directory pub-dir)))))
-#+end_src
-
-#+RESULTS:
-: org-export-output-file-name
-
-** Look and Feel
-*** Custom Faces
-#+begin_src emacs-lisp
-(after! org
   (custom-set-faces!
     `((org-quote)
       :foreground ,(doom-color 'blue) :extend t)
@@ -684,13 +725,18 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
       :background ,(doom-color 'bg)))
   ;; Change how LaTeX and image previews are shown
   (setq org-highlight-latex-and-related '(native entities script)
-        org-image-actual-width (min (/ (display-pixel-width) 3) 800)))
-
+        org-image-actual-width (min (/ (display-pixel-width) 3) 800))
 #+end_src
+
 #+RESULTS:
-: 800
+: 682
+
+
+
+** Look and Feel
+*** Custom Faces
 Using medium weights and stuff for our headers, as well as making them larger
-#+begin_src emacs-lisp :results none
+#+begin_src emacs-lisp :tangle yes
 (after! org-mode
   (custom-set-faces!
     '((org-document-title)
@@ -736,18 +782,19 @@ Using medium weights and stuff for our headers, as well as making them larger
     ))
 #+end_src
 *** Org-Ellipsis
-#+begin_src emacs-lisp :results none
+#+begin_src emacs-lisp :tangle yes
 (after! org
-(setq org-ellipsis " ▾ "
-      org-hide-leading-stars t
-      org-priority-highest ?A
-      org-priority-lowest ?E
-      org-priority-faces
-      '((?A . 'nerd-icons-red)
+(setq org-ellipsis " ▾ ")
+(setq org-hide-leading-stars t)
+(setq org-priority-highest ?A)
+(setq org-priority-lowest ?E)
+(setq org-priority-faces
+      '((?A . 'nerd-icons-red)          ;
         (?B . 'nerd-icons-orange)
         (?C . 'nerd-icons-yellow)
         (?D . 'nerd-icons-green)
         (?E . 'nerd-icons-blue)))
+
 
 (appendq! +ligatures-extra-symbols
           (list :list_property "∷"
@@ -764,7 +811,11 @@ Using medium weights and stuff for our headers, as well as making them larger
                 :priority_d    #("⬇" 0 1 (face nerd-icons-green))
                 :priority_e    #("❓" 0 1 (face nerd-icons-blue)))))
 #+end_src
-** Keybinds
+
+#+RESULTS:
+| :name | » | :src_block | » | :src_block_end | « | :quote | “ | :quote_end | ” | :lambda | λ  | :def | ƒ | :composition | ∘ | :map | ↦ | :null | ∅ | :true | 𝕋 | :false | 𝔽 | :int | ℤ | :float | ℝ | :str | 𝕊  | :bool | 𝔹 | :list | 𝕃 | :not | ￢ | :in | ∈ | :not-in | ∉ | :and | ∧ | :or | ∨ | :for | ∀ | :some | ∃ | :return | ⟼ | :yield | ⟻ | :union | ⋃ | :intersect | ∩ | :diff | ∖ | :tuple | ⨂ | :pipe |  | :dot | • | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ | :list_property | ∷ | :em_dash | — | :ellipses | … | :arrow_right | → | :arrow_left | ← | :arrow_lr | ↔ | :properties | ⚙ | :end | ∎ | :priority_a | ⚑ | :priority_b | ⬆ | :priority_c | ■ | :priority_d | ⬇ | :priority_e | ❓ |
+
+** Keybind
 *** TODO General
 #+begin_src emacs-lisp
 (map! :after org
@@ -837,7 +888,7 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
         (:cache . "no")
         (:noweb . "no")
         (:hlines . "yes")
-        (:tangle . "no")
+        (:tangle . "yes")
         (:comments . "link")))
 
 #+END_SRC
@@ -1128,11 +1179,13 @@ yanked this from my .custom thing cause I want it to setup here
 #+end_src
 
 #+RESULTS:
+| ascii | beamer | html | icalendar | latex | man | md | odt |
 
 *** Latex
 **** Compiling
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle yes
+(after! org
 (use-package! ox-latex
   :config
 
@@ -1146,7 +1199,7 @@ yanked this from my .custom thing cause I want it to setup here
           ;; - lualatex: good microtype feature support, however slow to compile
           ;; - xelatex: only protrusion support, fast compilation
           ("activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10"
-           "microtype" nil ("pdflatex"))
+           "microtype" nil ("pdflatex")         )
           ("activate={true,nocompatibility},final,tracking=true,factor=1100,stretch=10,shrink=10"
            "microtype" nil ("lualatex"))
           ("protrusion={true,nocompatibility},final,factor=1100,stretch=10,shrink=10"
@@ -1154,14 +1207,12 @@ yanked this from my .custom thing cause I want it to setup here
           ("dvipsnames,svgnames" "xcolor" nil)  ; Include xcolor package
           ("headings=optiontoheadandtoc,footings=optiontofootandtoc,headlines=optiontoheadandtoc"
            "scrextend" nil)  ; Include scrextend package
-          ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil))))
+          ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil)))))
 #+end_src
 
-#+RESULTS:
-: t
-
 #+name: configuring document classes
-#+begin_src elisp
+#+begin_src elisp :tangle yes
+(after! org
 (after! ox
  ;; Additional LaTeX classes
   (after! ox
@@ -1202,6 +1253,7 @@ yanked this from my .custom thing cause I want it to setup here
                    ("\\subsection{%s}" . "\\subsection*{%s}")
                    ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
 
+
   ;; Table of contents customization
 (after! org
   ;; Customize table of contents style
@@ -1237,30 +1289,19 @@ yanked this from my .custom thing cause I want it to setup here
            ("\\subsection{%s}" . "\\subsection*{%s}")
            ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
            ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))))
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))))))
 
-#+end_src
-
-#+RESULTS:
-| koma-book    | \documentclass[11pt]{scrbook}        | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) |
-| koma-report  | \documentclass[11pt]{scrreprt}       | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) |
-| koma-article | \documentclass[11pt]{scrartcl}       | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s})   | (\subparagraph{%s} . \subparagraph*{%s})   |
-| koma-letter  | \documentclass[11pt]{scrletter}      | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s})   | (\subparagraph{%s} . \subparagraph*{%s})   |
-| beamer       | \documentclass[presentation]{beamer} | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) |                                      |                                            |
-| article      | \documentclass[11pt]{article}        | (\section{%s} . \section*{%s}) | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) | (\paragraph{%s} . \paragraph*{%s})   | (\subparagraph{%s} . \subparagraph*{%s})   |
-| report       | \documentclass[11pt]{report}         | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) |
-| book         | \documentclass[11pt]{book}           | (\part{%s} . \part*{%s})       | (\chapter{%s} . \chapter*{%s})       | (\section{%s} . \section*{%s})             | (\subsection{%s} . \subsection*{%s}) | (\subsubsection{%s} . \subsubsection*{%s}) |
-
-#+begin_src emacs-lisp
 (after! ox-latex
   (setq org-latex-src-block-backend 'engraved))
+
 #+end_src
 
-#+RESULTS:
+#+RESULTS: configuring document classes
 : engraved
 
 
-#+begin_src emacs-lisp
+
+#+begin_src emacs-lisp :tangle yes
 (use-package! ox-chameleon
   :after ox
   :config
@@ -1270,14 +1311,24 @@ yanked this from my .custom thing cause I want it to setup here
 #+RESULTS:
 : t
 
-smart emacs guy says latexmk + biber is better so uhh, whatever you say boss!
-#+begin_src emacs-lisp
-;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
-(setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%f %o"))
+trying to get org to export to a default directory by default
+#+begin_src emacs-lisp :tangle yes
+;(defun org-export-output-file-name-modified (orig-fun extension &optional subtreep pub-dir)
+  "Modifies org-export to place exported files in a custom directory with a subdirectory for each file."
+;  (let* ((base-name (file-name-base (buffer-file-name)))
+;         (pub-dir (concat "~/org/exported/" base-name "/"))) ; Build path with subdirectory
+;    (unless (file-directory-p pub-dir)
+;      (make-directory pub-dir t)) ; Create the directory and parents if needed
+;    (apply orig-fun extension subtreep pub-dir nil))) ; Pass the modified pub-dir
+
+;(advice-add 'org-export-output-file-name :around #'org-export-output-file-name-modified)
+
+;; Update the org-latex-pdf-process to use the correct output-directory placeholder
+(setq org-latex-pdf-process '("LANGUAGE=en_US.UTF-8 LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
 #+end_src
 
 #+RESULTS:
-| LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%f %o |
+| LANGUAGE=en_US.UTF-8 LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f |
 
 ***** Functions?
 not sure how to categorize these, but all of the following is taken from the tecosaur emacs config
@@ -1298,60 +1349,18 @@ not sure how to categorize these, but all of the following is taken from the tec
              '+org-export-latex-fancy-item-checkboxes)
 
 #+end_src
-#+name: latex-hanging-secnum
-#+begin_src LaTeX
-\renewcommand\sectionformat{\llap{\thesection\autodot\enskip}}
-\renewcommand\subsectionformat{\llap{\thesubsection\autodot\enskip}}
-\renewcommand\subsubsectionformat{\llap{\thesubsubsection\autodot\enskip}}
-#+end_src
 
-It can also be nice to have big =\chapter=​s.
-#+name: latex-big-chapter
-#+begin_src LaTeX
-\RedeclareSectionCommand[afterindent=false, beforeskip=0pt, afterskip=0pt, innerskip=0pt]{chapter}
-\setkomafont{chapter}{\normalfont\Huge}
-\renewcommand*{\chapterheadstartvskip}{\vspace*{0\baselineskip}}
-\renewcommand*{\chapterheadendvskip}{\vspace*{0\baselineskip}}
-\renewcommand*{\chapterformat}{%
-  \fontsize{60}{30}\selectfont\rlap{\hspace{6pt}\thechapter}}
-\renewcommand*\chapterlinesformat[3]{%
-  \parbox[b]{\dimexpr\textwidth-0.5em\relax}{%
-    \raggedleft{{\large\scshape\bfseries\chapapp}\vspace{-0.5ex}\par\Huge#3}}%
-    \hfill\makebox[0pt][l]{#2}}
-#+end_src
+#+RESULTS:
+| +org-export-latex-fancy-item-checkboxes |
 
-#+name: latex-fancy-hyperref
-#+begin_src LaTeX
-\providecolor{url}{HTML}{0077bb}
-\providecolor{link}{HTML}{882255}
-\providecolor{cite}{HTML}{999933}
-\hypersetup{
-  pdfauthor={%a},
-  pdftitle={%t},
-  pdfkeywords={%k},
-  pdfsubject={%d},
-  pdfcreator={%c},
-  pdflang={%L},
-  breaklinks=true,
-  colorlinks=true,
-  linkcolor=link,
-  urlcolor=url,
-  citecolor=cite
-}
-\urlstyle{same}
-#+end_src
 
 
 
 **** Cover Pages
 
 #+begin_src emacs-lisp
-(defvar org-latex-cover-page 'auto
-  "When t, use a cover page by default.
-When auto, use a cover page when the document's wordcount exceeds
-`org-latex-cover-page-wordcount-threshold'.
-
-Set with #+option: coverpage:{yes,auto,no} in org buffers.")
+ (defvar org-latex-cover-page 'auto
+  "When t, use a cover page by default. When auto, use a cover page when the document's wordcount exceeds Set with #+option: coverpage:{yes,auto,no} in org buffers.")
 (defvar org-latex-cover-page-wordcount-threshold 5000
   "Document word count at which a cover page will be used automatically.
 This condition is applied when cover page option is set to auto.")
@@ -1411,6 +1420,79 @@ This condition is applied when cover page option is set to auto.")
 (eval '(cl-pushnew '(:latex-cover-page nil "coverpage" org-latex-cover-page)
                    (org-export-backend-options (org-export-get-backend 'latex))))
 
+#+end_src
+
+#+RESULTS:
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-cover-page                    | nil                  | coverpage | org-latex-cover-page                    |         |
+| :latex-class                         | LATEX_CLASS          | nil       | org-latex-default-class                 | t       |
+| :latex-class-options                 | LATEX_CLASS_OPTIONS  | nil       | nil                                     | t       |
+| :latex-header                        | LATEX_HEADER         | nil       | nil                                     | newline |
+| :latex-header-extra                  | LATEX_HEADER_EXTRA   | nil       | nil                                     | newline |
+| :description                         | DESCRIPTION          | nil       | nil                                     | parse   |
+| :keywords                            | KEYWORDS             | nil       | nil                                     | parse   |
+| :subtitle                            | SUBTITLE             | nil       | nil                                     | parse   |
+| :latex-active-timestamp-format       | nil                  | nil       | org-latex-active-timestamp-format       |         |
+| :latex-caption-above                 | nil                  | nil       | org-latex-caption-above                 |         |
+| :latex-classes                       | nil                  | nil       | org-latex-classes                       |         |
+| :latex-default-figure-position       | nil                  | nil       | org-latex-default-figure-position       |         |
+| :latex-default-table-environment     | nil                  | nil       | org-latex-default-table-environment     |         |
+| :latex-default-quote-environment     | nil                  | nil       | org-latex-default-quote-environment     |         |
+| :latex-default-table-mode            | nil                  | nil       | org-latex-default-table-mode            |         |
+| :latex-diary-timestamp-format        | nil                  | nil       | org-latex-diary-timestamp-format        |         |
+| :latex-engraved-options              | nil                  | nil       | org-latex-engraved-options              |         |
+| :latex-engraved-preamble             | nil                  | nil       | org-latex-engraved-preamble             |         |
+| :latex-engraved-theme                | LATEX_ENGRAVED_THEME | nil       | org-latex-engraved-theme                |         |
+| :latex-footnote-defined-format       | nil                  | nil       | org-latex-footnote-defined-format       |         |
+| :latex-footnote-separator            | nil                  | nil       | org-latex-footnote-separator            |         |
+| :latex-format-drawer-function        | nil                  | nil       | org-latex-format-drawer-function        |         |
+| :latex-format-headline-function      | nil                  | nil       | org-latex-format-headline-function      |         |
+| :latex-format-inlinetask-function    | nil                  | nil       | org-latex-format-inlinetask-function    |         |
+| :latex-hyperref-template             | nil                  | nil       | org-latex-hyperref-template             | t       |
+| :latex-image-default-scale           | nil                  | nil       | org-latex-image-default-scale           |         |
+| :latex-image-default-height          | nil                  | nil       | org-latex-image-default-height          |         |
+| :latex-image-default-option          | nil                  | nil       | org-latex-image-default-option          |         |
+| :latex-image-default-width           | nil                  | nil       | org-latex-image-default-width           |         |
+| :latex-images-centered               | nil                  | nil       | org-latex-images-centered               |         |
+| :latex-inactive-timestamp-format     | nil                  | nil       | org-latex-inactive-timestamp-format     |         |
+| :latex-inline-image-rules            | nil                  | nil       | org-latex-inline-image-rules            |         |
+| :latex-link-with-unknown-path-format | nil                  | nil       | org-latex-link-with-unknown-path-format |         |
+| :latex-src-block-backend             | nil                  | nil       | org-latex-src-block-backend             |         |
+| :latex-listings-langs                | nil                  | nil       | org-latex-listings-langs                |         |
+| :latex-listings-options              | nil                  | nil       | org-latex-listings-options              |         |
+| :latex-minted-langs                  | nil                  | nil       | org-latex-minted-langs                  |         |
+| :latex-minted-options                | nil                  | nil       | org-latex-minted-options                |         |
+| :latex-prefer-user-labels            | nil                  | nil       | org-latex-prefer-user-labels            |         |
+| :latex-subtitle-format               | nil                  | nil       | org-latex-subtitle-format               |         |
+| :latex-subtitle-separate             | nil                  | nil       | org-latex-subtitle-separate             |         |
+| :latex-table-scientific-notation     | nil                  | nil       | org-latex-table-scientific-notation     |         |
+| :latex-tables-booktabs               | nil                  | nil       | org-latex-tables-booktabs               |         |
+| :latex-tables-centered               | nil                  | nil       | org-latex-tables-centered               |         |
+| :latex-text-markup-alist             | nil                  | nil       | org-latex-text-markup-alist             |         |
+| :latex-title-command                 | nil                  | nil       | org-latex-title-command                 |         |
+| :latex-toc-command                   | nil                  | nil       | org-latex-toc-command                   |         |
+| :latex-compiler                      | LATEX_COMPILER       | nil       | org-latex-compiler                      |         |
+| :date                                | DATE                 | nil       | \today                                  | parse   |
+
+#+begin_src emacs-lisp
 (defun org-latex-cover-page-p ()
   "Whether a cover page should be used when exporting this Org file."
   (pcase (or (car
@@ -1426,12 +1508,19 @@ This condition is applied when cover page option is set to auto.")
 
 (defadvice! org-latex-set-coverpage-subtitle-format-a (contents info)
   "Set the subtitle format when a cover page is being used."
-  :before #'org-latex-template
+  :before 'org-latex-template
   (when (org-latex-cover-page-p)
     (setf info (plist-put info :latex-subtitle-format org-latex-subtitle-coverpage-format))))
+
+(setq org-latex-custom-id '("\\usepackage{tocloft}"
+"\\setlength{\\cftbeforesecskip}{1ex}"
+"\\setlength{\\cftbeforesubsecskip}{0.5ex}"
+"\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+"\\newpage"))
 #+end_src
 
 #+RESULTS:
+| \usepackage{tocloft} | \setlength{\cftbeforesecskip}{1ex} | \setlength{\cftbeforesubsecskip}{0.5ex} | \setlength{\cftbeforesubsubsecskip}{0.5ex} | \newpage |
 
 #+begin_src emacs-lisp
 (setq org-latex-custom-id ’("\\usepackage{tocloft}"
@@ -1441,91 +1530,6 @@ This condition is applied when cover page option is set to auto.")
 "\\newpage"))
 #+end_src
 #+RESULTS:
-
-** TODO Org-Modern
-still need to fix this :/
-the key to it looking *pretty*
-#+begin_src emacs-lisp
-(use-package! org-modern
- :hook (org-mode . org-modern-mode)
- :config
- (setq
-  org-special-ctrl-a/e t
-  org-insert-heading-respect-content t
-  ;; appearance
-  org-modern-radio-target    '("❰" t "❱")
-  org-modern-internal-target '("↪ " t "") ; TODO: make this not be an emoji, and instead a font lig
-  org-modern-todo t
-  org-modern-todo-faces
-  '(("TODO" :inverse-video t :inherit org-todo)
-   ("PROJ" :inverse-video t :inherit +org-todo-project)
-   ("STRT" :inverse-video t :inherit +org-todo-active)
-   ("[-]"  :inverse-video t :inherit +org-todo-active)
-   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
-   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
-   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
-   ("KILL" :inverse-video t :inherit +org-todo-cancel)
-   ("NO"   :inverse-video t :inherit +org-todo-cancel))
-  org-modern-footnote (cons nil (cadr org-script-display))
-   org-modern-block-name
-   '((t . t)
-     ("src" "»" "«")
-     ("example" "»–" "–«")
-     ("quote" "❝" "❞")
-     ("export" "⏩" "⏪"))
-   org-modern-priority nil
-   org-modern-progress nil
-   ; org-modern-horizontal-rule (make-string 36 ?─)
-   org-modern-horizontal-rule "──────────"
-  ; org-modern-hide-stars "·"
-   org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
-        org-modern-keyword
-        '((t . t)
-          ("title" . "𝙏")
-          ("subtitle" . "𝙩")
-          ("author" . "𝘼")
-          ("email" . #("" 0 1 (display (raise -0.14))))
-          ("date" . "𝘿")
-          ("property" . "☸")
-          ("options" . "⌥")
-          ("startup" . "⏻")
-          ("macro" . "𝓜")
-          ("bind" . #("" 0 1 (display (raise -0.1))))
-          ("bibliography" . "")
-          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
-          ("cite_export" . "⮭")
-          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
-          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
-          ("include" . "⇤")
-          ("setupfile" . "⇚")
-          ("html_head" . "🅷")
-          ("html" . "🅗")
-          ("latex_class" . "🄻")
-          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
-          ("latex_header" . "🅻")
-          ("latex_header_extra" . "🅻⁺")
-          ("latex" . "🅛")
-          ("beamer_theme" . "🄱")
-          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
-          ("beamer_font_theme" . "🄱𝐀")
-          ("beamer_header" . "🅱")
-          ("beamer" . "🅑")
-          ("attr_latex" . "🄛")
-          ("attr_html" . "🄗")
-          ("attr_org" . "⒪")
-          ("call" . #("" 0 1 (display (raise -0.15))))
-          ("name" . "⁍")
-          ("header" . "›")
-          ("caption" . "☰")
-          ("results" . "🠶")))
-  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
-
-
-
-#+end_src
-
-#+RESULTS:
-| org-modern-mode | turn-on-org-cdlatex | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | er/add-org-mode-expansions | (closure ((hook . org-mode-hook)) (&rest _) (progn (let ((tail '(after-change-major-mode-hook))) (while tail (let ((hook (car tail))) (let ((tail (list #'(lambda (&rest _) (if (derived-mode-p 'org-mode) (progn (setq tab-width 8))))))) (while tail (let ((func (car tail))) (add-hook hook func nil t) (setq tail (cdr tail))))) (setq tail (cdr tail)))))) (add-hook 'save-place-after-find-file-hook #'+org-make-last-point-visible-h nil t)) | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | (closure (org--rds reftex-docstruct-symbol org--single-lines-list-is-paragraph org-element-greater-elements org-agenda-restrict-end org-agenda-restrict-begin org-agenda-restrict visual-fill-column-width org-clock-history org-agenda-current-date org-with-time org-defdecode org-def org-read-date-inactive org-ans2 org-ans1 org-columns-current-fmt-compiled org-clock-current-task org-clock-effort org-agenda-skip-function org-agenda-skip-comment-trees org-agenda-archives-mode org-end-time-was-given org-time-was-given org-log-note-extra org-log-note-purpose org-log-post-message org-last-inserted-timestamp org-last-changed-timestamp org-entry-property-inherited-from org-state org-agenda-headline-snapshot-before-repeat org-agenda-buffer-name org-agenda-start-on-weekday org-agenda-buffer-tmp-name org-priority-regexp org-mode-abbrev-table org-mode-syntax-table org-element-cache-persistent org-tbl-menu org-org-menu org-struct-menu org-entities org-last-state org-id-track-globally org-clock-start-time texmathp-why remember-data-file org-agenda-tags-todo-honor-ignore-options calc-embedded-open-mode calc-embedded-open-formula calc-embedded-close-formula align-mode-rules-list org-emphasis-alist org-emphasis-regexp-components org-export-registered-backends org-babel-load-languages org-id-overriding-file-name org-indent-indentation-per-level org-element--timestamp-regexp org-element-cache-map-continue-from org-element-paragraph-separate org-agenda-buffer-name org-inlinetask-min-level t) nil (add-hook 'change-major-mode-hook 'org-fold-show-all 'append 'local)) | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | evil-org-mode | org-eldoc-load | toc-org-enable | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | org-cdlatex-mode | writegood-mode | embrace-org-mode-hook | +literate-enable-recompile-h |
 
 ** Org-Agenda and Dailies
 *** Define My Daily Template:

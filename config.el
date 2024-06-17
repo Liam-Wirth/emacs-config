@@ -307,7 +307,7 @@
 (defun kb/toggle-window-transparency ()
   "Toggle transparency."
   (interactive)
-  (let ((alpha-transparency 75))
+  (let ((alpha-transparency 0))
     (pcase (frame-parameter nil 'alpha-background)
       (alpha-transparency (set-frame-parameter nil 'alpha-background 100))
       (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
@@ -418,42 +418,92 @@
   (add-hook 'writeroom-mode-enable-hook #'+zen-prose-org-h)
   (add-hook 'writeroom-mode-disable-hook #'+zen-nonprose-org-h))
 
-(defun nicer-org ()
-  (progn
-  (+org-pretty-mode 1)
-  (mixed-pitch-mode 1)
-  (hl-line-mode -1)
-  (display-line-numbers-mode -1)
-    (org-modern-mode -1)
-    (org-modern-mode 1)
-  ; (olivetti-mode 1)
-  ;(org-Num-mode 1)
-  ;(org-superstar-mode -1)
-  ; (org-indent-mode -1)
-  ))
-(add-hook! 'org-mode-hook  #'nicer-org)
-(add-hook! 'org-mode        #'nicer-org) ; NOTE: May be brokie
+(after! org
+  (use-package! org-modern
+ :config
+ (setq
+  org-special-ctrl-a/e t
+  org-insert-heading-respect-content t
+  ;; appearance
+  org-modern-radio-target    '("❰" t "❱")
+  org-modern-internal-target '("↪ " t "") ; TODO: make this not be an emoji, and instead a font lig
+  org-modern-todo t
+  org-modern-todo-faces
+  '(("TODO" :inverse-video t :inherit org-todo)
+   ("PROJ" :inverse-video t :inherit +org-todo-project)
+   ("STRT" :inverse-video t :inherit +org-todo-active)
+   ("[-]"  :inverse-video t :inherit +org-todo-active)
+   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
+   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
+   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
+   ("KILL" :inverse-video t :inherit +org-todo-cancel)
+   ("NO"   :inverse-video t :inherit +org-todo-cancel))
+  org-modern-footnote (cons nil (cadr org-script-display))
+   org-modern-block-name
+   '((t . t)
+     ("src" "»" "«")
+     ("example" "»–" "–«")
+     ("quote" "❝" "❞")
+     ("export" "⏩" "⏪"))
+   org-modern-priority nil
+   org-modern-progress nil
+   ; org-modern-horizontal-rule (make-string 36 ?─)
+   org-modern-horizontal-rule "──────────"
+  ; org-modern-hide-stars "·"
+   org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
+        org-modern-keyword
+        '((t . t)
+          ("title" . "𝙏")
+          ("subtitle" . "𝙩")
+          ("author" . "𝘼")
+          ("email" . #("" 0 1 (display (raise -0.14))))
+          ("date" . "𝘿")
+          ("property" . "☸")
+          ("options" . "⌥")
+          ("startup" . "⏻")
+          ("macro" . "𝓜")
+          ("bind" . #("" 0 1 (display (raise -0.1))))
+          ("bibliography" . "")
+          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
+          ("cite_export" . "⮭")
+          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
+          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
+          ("include" . "⇤")
+          ("setupfile" . "⇚")
+          ("html_head" . "🅷")
+          ("html" . "🅗")
+          ("latex_class" . "🄻")
+          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
+          ("latex_header" . "🅻")
+          ("latex_header_extra" . "🅻⁺")
+          ("latex" . "🅛")
+          ("beamer_theme" . "🄱")
+          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
+          ("beamer_font_theme" . "🄱𝐀")
+          ("beamer_header" . "🅱")
+          ("beamer" . "🅑")
+          ("attr_latex" . "🄛")
+          ("attr_html" . "🄗")
+          ("attr_org" . "⒪")
+          ("call" . #("" 0 1 (display (raise -0.15))))
+          ("name" . "⁍")
+          ("header" . "›")
+          ("caption" . "☰")
+          ("results" . "🠶")))
+  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
+
+(after! org (add-hook 'org-mode-hook #'org-modern-mode))
+)
 
 (use-package! org
 :config
 (setq org-fontify-quote-and-verse-blocks t
 org-highlight-latex-and-related '(native script entities)
 org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
+;(setq org-export-directory "~/org/exported")
 
 (require 'org-src)
 (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t))))
-
-(after! org
-;; This function is nice because it helps keep whatever directory I'm working in clean. I like to do homework in org roam as well, and don't want that directory to be filled with a bunch of .tex and .pdf files
-
-(defadvice org-export-output-file-name (before org-add-export-dir activate)
-  "Modifies org-export to place exported files in a different directory"
-  (when (not pub-dir)
-      (setq pub-dir "~/org/exported/")
-      (when (not (file-directory-p pub-dir))
-       (make-directory pub-dir)))))
-
-(after! org
   (custom-set-faces!
     `((org-quote)
       :foreground ,(doom-color 'blue) :extend t)
@@ -461,7 +511,7 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
       :background ,(doom-color 'bg)))
   ;; Change how LaTeX and image previews are shown
   (setq org-highlight-latex-and-related '(native entities script)
-        org-image-actual-width (min (/ (display-pixel-width) 3) 800)))
+        org-image-actual-width (min (/ (display-pixel-width) 3) 800))
 
 (after! org-mode
   (custom-set-faces!
@@ -508,16 +558,17 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
     ))
 
 (after! org
-(setq org-ellipsis " ▾ "
-      org-hide-leading-stars t
-      org-priority-highest ?A
-      org-priority-lowest ?E
-      org-priority-faces
-      '((?A . 'nerd-icons-red)
+(setq org-ellipsis " ▾ ")
+(setq org-hide-leading-stars t)
+(setq org-priority-highest ?A)
+(setq org-priority-lowest ?E)
+(setq org-priority-faces
+      '((?A . 'nerd-icons-red)          ;
         (?B . 'nerd-icons-orange)
         (?C . 'nerd-icons-yellow)
         (?D . 'nerd-icons-green)
         (?E . 'nerd-icons-blue)))
+
 
 (appendq! +ligatures-extra-symbols
           (list :list_property "∷"
@@ -575,7 +626,7 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
         (:cache . "no")
         (:noweb . "no")
         (:hlines . "yes")
-        (:tangle . "no")
+        (:tangle . "yes")
         (:comments . "link")))
 
 (org-babel-do-load-languages
@@ -792,6 +843,7 @@ set palette defined ( 0 '%s',\
  (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
  )
 
+(after! org
 (use-package! ox-latex
   :config
 
@@ -805,7 +857,7 @@ set palette defined ( 0 '%s',\
           ;; - lualatex: good microtype feature support, however slow to compile
           ;; - xelatex: only protrusion support, fast compilation
           ("activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10"
-           "microtype" nil ("pdflatex"))
+           "microtype" nil ("pdflatex")         )
           ("activate={true,nocompatibility},final,tracking=true,factor=1100,stretch=10,shrink=10"
            "microtype" nil ("lualatex"))
           ("protrusion={true,nocompatibility},final,factor=1100,stretch=10,shrink=10"
@@ -813,8 +865,9 @@ set palette defined ( 0 '%s',\
           ("dvipsnames,svgnames" "xcolor" nil)  ; Include xcolor package
           ("headings=optiontoheadandtoc,footings=optiontofootandtoc,headlines=optiontoheadandtoc"
            "scrextend" nil)  ; Include scrextend package
-          ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil))))
+          ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil)))))
 
+(after! org
 (after! ox
  ;; Additional LaTeX classes
   (after! ox
@@ -855,6 +908,7 @@ set palette defined ( 0 '%s',\
                    ("\\subsection{%s}" . "\\subsection*{%s}")
                    ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
 
+
   ;; Table of contents customization
 (after! org
   ;; Customize table of contents style
@@ -890,7 +944,7 @@ set palette defined ( 0 '%s',\
            ("\\subsection{%s}" . "\\subsection*{%s}")
            ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
            ("\\paragraph{%s}" . "\\paragraph*{%s}")
-           ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))))
+           ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))))))
 
 (after! ox-latex
   (setq org-latex-src-block-backend 'engraved))
@@ -900,8 +954,18 @@ set palette defined ( 0 '%s',\
   :config
   (setq! ox-chameleon-engrave-theme 'doom-gruvbox))
 
-;; org-latex-compilers = ("pdflatex" "xelatex" "lualatex"), which are the possible values for %latex
-(setq org-latex-pdf-process '("LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%f %o"))
+;(defun org-export-output-file-name-modified (orig-fun extension &optional subtreep pub-dir)
+  "Modifies org-export to place exported files in a custom directory with a subdirectory for each file."
+;  (let* ((base-name (file-name-base (buffer-file-name)))
+;         (pub-dir (concat "~/org/exported/" base-name "/"))) ; Build path with subdirectory
+;    (unless (file-directory-p pub-dir)
+;      (make-directory pub-dir t)) ; Create the directory and parents if needed
+;    (apply orig-fun extension subtreep pub-dir nil))) ; Pass the modified pub-dir
+
+;(advice-add 'org-export-output-file-name :around #'org-export-output-file-name-modified)
+
+;; Update the org-latex-pdf-process to use the correct output-directory placeholder
+(setq org-latex-pdf-process '("LANGUAGE=en_US.UTF-8 LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
 
 (defun +org-export-latex-fancy-item-checkboxes (text backend info)
   (when (org-export-derived-backend-p backend 'latex)
@@ -919,11 +983,7 @@ set palette defined ( 0 '%s',\
              '+org-export-latex-fancy-item-checkboxes)
 
 (defvar org-latex-cover-page 'auto
-  "When t, use a cover page by default.
-When auto, use a cover page when the document's wordcount exceeds
-`org-latex-cover-page-wordcount-threshold'.
-
-Set with #+option: coverpage:{yes,auto,no} in org buffers.")
+  "When t, use a cover page by default. When auto, use a cover page when the document's wordcount exceeds Set with #+option: coverpage:{yes,auto,no} in org buffers.")
 (defvar org-latex-cover-page-wordcount-threshold 5000
   "Document word count at which a cover page will be used automatically.
 This condition is applied when cover page option is set to auto.")
@@ -998,89 +1058,21 @@ This condition is applied when cover page option is set to auto.")
 
 (defadvice! org-latex-set-coverpage-subtitle-format-a (contents info)
   "Set the subtitle format when a cover page is being used."
-  :before #'org-latex-template
+  :before 'org-latex-template
   (when (org-latex-cover-page-p)
     (setf info (plist-put info :latex-subtitle-format org-latex-subtitle-coverpage-format))))
+
+(setq org-latex-custom-id '("\\usepackage{tocloft}"
+"\\setlength{\\cftbeforesecskip}{1ex}"
+"\\setlength{\\cftbeforesubsecskip}{0.5ex}"
+"\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
+"\\newpage"))
 
 (setq org-latex-custom-id ’("\\usepackage{tocloft}"
 "\\setlength{\\cftbeforesecskip}{1ex}"
 "\\setlength{\\cftbeforesubsecskip}{0.5ex}"
 "\\setlength{\\cftbeforesubsubsecskip}{0.5ex}"
 "\\newpage"))
-
-(use-package! org-modern
- :hook (org-mode . org-modern-mode)
- :config
- (setq
-  org-special-ctrl-a/e t
-  org-insert-heading-respect-content t
-  ;; appearance
-  org-modern-radio-target    '("❰" t "❱")
-  org-modern-internal-target '("↪ " t "") ; TODO: make this not be an emoji, and instead a font lig
-  org-modern-todo t
-  org-modern-todo-faces
-  '(("TODO" :inverse-video t :inherit org-todo)
-   ("PROJ" :inverse-video t :inherit +org-todo-project)
-   ("STRT" :inverse-video t :inherit +org-todo-active)
-   ("[-]"  :inverse-video t :inherit +org-todo-active)
-   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
-   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
-   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
-   ("KILL" :inverse-video t :inherit +org-todo-cancel)
-   ("NO"   :inverse-video t :inherit +org-todo-cancel))
-  org-modern-footnote (cons nil (cadr org-script-display))
-   org-modern-block-name
-   '((t . t)
-     ("src" "»" "«")
-     ("example" "»–" "–«")
-     ("quote" "❝" "❞")
-     ("export" "⏩" "⏪"))
-   org-modern-priority nil
-   org-modern-progress nil
-   ; org-modern-horizontal-rule (make-string 36 ?─)
-   org-modern-horizontal-rule "──────────"
-  ; org-modern-hide-stars "·"
-   org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶")
-        org-modern-keyword
-        '((t . t)
-          ("title" . "𝙏")
-          ("subtitle" . "𝙩")
-          ("author" . "𝘼")
-          ("email" . #("" 0 1 (display (raise -0.14))))
-          ("date" . "𝘿")
-          ("property" . "☸")
-          ("options" . "⌥")
-          ("startup" . "⏻")
-          ("macro" . "𝓜")
-          ("bind" . #("" 0 1 (display (raise -0.1))))
-          ("bibliography" . "")
-          ("print_bibliography" . #("" 0 1 (display (raise -0.1))))
-          ("cite_export" . "⮭")
-          ("print_glossary" . #("ᴬᶻ" 0 1 (display (raise -0.1))))
-          ("glossary_sources" . #("" 0 1 (display (raise -0.14))))
-          ("include" . "⇤")
-          ("setupfile" . "⇚")
-          ("html_head" . "🅷")
-          ("html" . "🅗")
-          ("latex_class" . "🄻")
-          ("latex_class_options" . #("🄻" 1 2 (display (raise -0.14))))
-          ("latex_header" . "🅻")
-          ("latex_header_extra" . "🅻⁺")
-          ("latex" . "🅛")
-          ("beamer_theme" . "🄱")
-          ("beamer_color_theme" . #("🄱" 1 2 (display (raise -0.12))))
-          ("beamer_font_theme" . "🄱𝐀")
-          ("beamer_header" . "🅱")
-          ("beamer" . "🅑")
-          ("attr_latex" . "🄛")
-          ("attr_html" . "🄗")
-          ("attr_org" . "⒪")
-          ("call" . #("" 0 1 (display (raise -0.15))))
-          ("name" . "⁍")
-          ("header" . "›")
-          ("caption" . "☰")
-          ("results" . "🠶")))
-  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
 
 (defun insert-previous-daily-link ()
   "Insert link to the previous daily note, if available."
