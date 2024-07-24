@@ -613,12 +613,6 @@ This is intended to be used with org-redisplay-inline-images."
 (after! spell-fu
   (cl-pushnew 'org-modern-tag (alist-get 'org-mode +spell-excluded-faces-alist)))
 
-(use-package! org-appear
-  :hook (org-mode . org-appear-mode)
-  :config
-  (setq org-hide-emphasis-markers t
-        org-appear-autolinks 'just-brackets))
-
 (setq org-babel-default-header-args
       '((:session . "none")
         (:results . "replace")
@@ -1180,6 +1174,8 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 (ispell-change-dictionary "en_US" t)
 
 (set-file-template! "\\.pro" :trigger "__" :mode 'prolog-mode)
+
+(add-to-list 'auto-mode-alist '("\\.pro\\'" . prolog-mode))
 
 (after! lsp-mode
     (lsp-register-client
