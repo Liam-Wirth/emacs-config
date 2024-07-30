@@ -1063,7 +1063,7 @@ of contents as a string, or nil if it is empty."
 
 (setq org-roam-dailies-capture-templates
       (let ((head
-             (concat "#+title: %<%y-%m-%d (%a)>\n"
+             (concat "#+title: %<%y-%m-%d (%A)>\n"
                      "#+startup: showall\n"
                      "#+filetags: dailies\n* daily overview\n"
                      "#+export_file_name: ~/org/exported/dalies/"
@@ -1071,8 +1071,7 @@ of contents as a string, or nil if it is empty."
                      "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
                      "#+end_src\n"
                      "#+ Last Daily Entry: "
-                     (my/insert-previous-daily-link)
-                     "\n* [/] do today\n* [/] maybe do today\n* journal\n")))
+                     "\n* [/] do today\n* [/] maybe do today\n* journal\n* [/] Tasks\n")))
         `(("j" "journal" entry
            "* %<%H:%M> %?"
            :if-new (file+head+olp "%<%y-%m-%d>.org" ,head ("journal"))
@@ -1164,7 +1163,40 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 ;; Build the agenda list the first time for the session
 (my/org-roam-refresh-agenda-list)
 
+(defun my/org-roam-copy-heading-to-today ()
+  "Copy only the heading of a completed TODO to today's daily file with 'DONE' before it and link back to the original, avoiding duplicates."
+  (interactive)
+  (let* ((today-file (expand-file-name (format "%s.org" (format-time-string "%y-%m-%d")) "~/org/roam/daily"))
+         (original-file (buffer-file-name))
+         (heading (save-excursion
+                    (org-back-to-heading t)
+                    (org-get-heading t t t t)))
+         (link-to-original (org-link-make-string (concat "file:" (expand-file-name original-file)) heading))
+         (entry (format "** DONE %s\n   %s" heading link-to-original))
+         (already-added nil))
+    ;; Check if the heading is already in the daily file
+    (with-current-buffer (find-file-noselect today-file)
+      (goto-char (point-min))
+      (while (re-search-forward (format "^\*\* DONE %s" (regexp-quote heading)) nil t)
+        (setq already-added t)))
 
+    ;; Only append if the heading is not already in the file
+    (unless already-added
+      (with-current-buffer (find-file-noselect today-file)
+        (goto-char (point-max))
+        ;; Ensure "Tasks" heading exists
+        (unless (re-search-forward "^\* \\[\\/] Tasks" nil t)
+          (goto-char (point-max))
+          (insert "\n* [1/1] Tasks\n"))
+        (goto-char (point-max))
+        ;; Insert only the heading and link
+        (insert (format "\n%s\n" entry))
+        (save-buffer)))))
+
+(add-to-list 'org-after-todo-state-change-hook
+             (lambda ()
+               (when (equal org-state "DONE")
+                 (my/org-roam-copy-heading-to-today))))
 
 (use-package! flycheck
   :ensure t

@@ -961,6 +961,8 @@ org roam does this thing where it prepends all the files with a ton of numbers a
     (funcall orig-fun)))
 #+end_src
 
+#+RESULTS:
+
 
 
 *** DONE Modeline something something
@@ -1435,7 +1437,7 @@ of contents as a string, or nil if it is empty."
 : html5
 
 ** org-agenda and dailies
-**** todo implement function that will link to last daily node
+**** DONE implement function that will link to last daily node
 #+begin_src emacs-lisp
 ;(defun my/insert-previous-daily-link ()
 ;  "insert link to the previous daily note, if available."
@@ -1455,7 +1457,7 @@ also, fix this such that it actually works, cause i had to open my config and c-
 #+begin_src emacs-lisp
 (setq org-roam-dailies-capture-templates
       (let ((head
-             (concat "#+title: %<%y-%m-%d (%a)>\n"
+             (concat "#+title: %<%y-%m-%d (%A)>\n"
                      "#+startup: showall\n"
                      "#+filetags: dailies\n* daily overview\n"
                      "#+export_file_name: ~/org/exported/dalies/"
@@ -1463,8 +1465,7 @@ also, fix this such that it actually works, cause i had to open my config and c-
                      "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
                      "#+end_src\n"
                      "#+ Last Daily Entry: "
-                     (my/insert-previous-daily-link)
-                     "\n* [/] do today\n* [/] maybe do today\n* journal\n")))
+                     "\n* [/] do today\n* [/] maybe do today\n* journal\n* [/] Tasks\n")))
         `(("j" "journal" entry
            "* %<%H:%M> %?"
            :if-new (file+head+olp "%<%y-%m-%d>.org" ,head ("journal"))
@@ -1485,7 +1486,7 @@ also, fix this such that it actually works, cause i had to open my config and c-
 #+end_src
 
 #+RESULTS:
-| j | journal | entry | * %<%h:%m> %? | :if-new | (file+head+olp %<%y-%m-%d>.org #+title: %<%y-%m-%d (%a)> |
+| j | journal | entry | * %<%H:%M> %? | :if-new | (file+head+olp %<%Y-%m-%d>.org #+title: %<%y-%m-%d (%A)> |
 
 #+begin_src emacs-lisp
         ;; Set up org-agenda-files to include Org Roam dailies directory
@@ -1565,7 +1566,7 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 #+end_src
 
 #+RESULTS:
-: 682
+: 800
 
 ** More Org-Centric Custom Commands
 #+begin_src emacs-lisp
@@ -1591,10 +1592,50 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 
 *** DONE Automatically move completed todos to dailies
 #+begin_src emacs-lisp
+(defun my/org-roam-copy-heading-to-today ()
+  "Copy only the heading of a completed TODO to today's daily file with 'DONE' before it and link back to the original, avoiding duplicates."
+  (interactive)
+  (let* ((today-file (expand-file-name (format "%s.org" (format-time-string "%y-%m-%d")) "~/org/roam/daily"))
+         (original-file (buffer-file-name))
+         (heading (save-excursion
+                    (org-back-to-heading t)
+                    (org-get-heading t t t t)))
+         (link-to-original (org-link-make-string (concat "file:" (expand-file-name original-file)) heading))
+         (entry (format "** DONE %s\n   %s" heading link-to-original))
+         (already-added nil))
+    ;; Check if the heading is already in the daily file
+    (with-current-buffer (find-file-noselect today-file)
+      (goto-char (point-min))
+      (while (re-search-forward (format "^\*\* DONE %s" (regexp-quote heading)) nil t)
+        (setq already-added t)))
 
+    ;; Only append if the heading is not already in the file
+    (unless already-added
+      (with-current-buffer (find-file-noselect today-file)
+        (goto-char (point-max))
+        ;; Ensure "Tasks" heading exists
+        (unless (re-search-forward "^\* \\[\\/] Tasks" nil t)
+          (goto-char (point-max))
+          (insert "\n* [1/1] Tasks\n"))
+        (goto-char (point-max))
+        ;; Insert only the heading and link
+        (insert (format "\n%s\n" entry))
+        (save-buffer)))))
 #+end_src
 
 #+RESULTS:
+: my/org-roam-copy-heading-to-today
+
+#+begin_src emacs-lisp
+(add-to-list 'org-after-todo-state-change-hook
+             (lambda ()
+               (when (equal org-state "DONE")
+                 (my/org-roam-copy-heading-to-today))))
+
+#+end_src
+#+RESULTS:
+| lambda | nil | (when (equal org-state DONE) (my/org-roam-copy-heading-to-today)) |
+| lambda | nil | (when (equal org-state DONE) (my/org-roam-copy-todo-to-today))    |
 
 * Language Stuff
 doom emacs is super nice in having a lot of easy configuration found in the [[doomdir: init.el][init.el]] file, but for anything that doesn't come with doom, I likely have to add it to the [[doomdir:packages.el][packages.el]] file, and handle it here
