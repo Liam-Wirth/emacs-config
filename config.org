@@ -1592,10 +1592,36 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 
 *** DONE Automatically move completed todos to dailies
 #+begin_src emacs-lisp
+(defun my/org-roam-create-daily-file-if-needed ()
+  "Create the daily file with the specified template if it doesn't exist."
+  (let* ((date-string (format-time-string "%y-%m-%d"))
+         (file-name (concat date-string ".org"))
+         (file-path (expand-file-name file-name "~/org/roam/daily"))
+         (file-exists (file-exists-p file-path))
+         (template (concat "#+title: " date-string " (%A)\n"
+                           "#+startup: showall\n"
+                           "#+filetags: dailies\n* daily overview\n"
+                           "#+export_file_name: ~/org/exported/dalies/"
+                           "\n#+begin_src emacs-lisp :results value raw\n"
+                           "(as/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
+                           "#+end_src\n"
+                           "#+ Last Daily Entry: "
+                           "\n* [/] do today\n* [/] maybe do today\n* journal\n* [/] Tasks\n")))
+        (unless file-exists
+      (with-temp-buffer
+        (insert template)
+        (write-file file-path)))
+    file-path))
+#+end_src
+
+#+RESULTS:
+: my/org-roam-create-daily-file-if-needed
+
+#+begin_src emacs-lisp
 (defun my/org-roam-copy-heading-to-today ()
-  "Copy only the heading of a completed TODO to today's daily file with 'DONE' before it and link back to the original, avoiding duplicates."
+  "Copy the heading of a completed TODO to today's daily file with 'DONE' before it and link back to the original, avoiding duplicates."
   (interactive)
-  (let* ((today-file (expand-file-name (format "%s.org" (format-time-string "%y-%m-%d")) "~/org/roam/daily"))
+  (let* ((today-file (my/org-roam-create-daily-file-if-needed))
          (original-file (buffer-file-name))
          (heading (save-excursion
                     (org-back-to-heading t)
@@ -1621,10 +1647,16 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
         ;; Insert only the heading and link
         (insert (format "\n%s\n" entry))
         (save-buffer)))))
+
+(defun my/org-roam-handle-todo ()
+  "Handle TODO items by copying their heading to today's daily file when their state changes."
+  (interactive)
+  (when (member org-state '("DONE" "TODO"))
+    (my/org-roam-copy-heading-to-today)))
 #+end_src
 
 #+RESULTS:
-: my/org-roam-copy-heading-to-today
+: my/org-roam-handle-todo
 
 #+begin_src emacs-lisp
 (add-to-list 'org-after-todo-state-change-hook
