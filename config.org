@@ -486,6 +486,21 @@ in newer versions of emacs they seem to have added the functionality to have a t
 : kb/toggle-window-transparency
 
 * Configuring Plugins (Misc)
+** WakaTime and Activity Watch
+Honestly still not sure which one I want to use, so I'll enable both ones foss and free (BASED ALERT) the other is not free NOT BASED ALERT
+*** WakaTime
+#+begin_src emacs-lisp
+(global-wakatime-mode)
+#+end_src
+*** ActivityWatch
+#+begin_src emacs-lisp
+(global-activity-watch-mode)
+#+end_src
+
+#+RESULTS:
+: t
+
+
 ** Which-Key
 it's like the one from neovim? (or is it the other way around?)
 #+begin_src emacs-lisp 

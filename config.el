@@ -314,6 +314,10 @@
       (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
 (global-set-key (kbd "<f12>") 'kb/toggle-window-transparency)
 
+(global-wakatime-mode)
+
+(global-activity-watch-mode)
+
 (after! which-key
   (setq which-key-idle-delay 0.2))
 

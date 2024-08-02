@@ -6,6 +6,9 @@
  '(custom-safe-themes
    '("691d671429fa6c6d73098fc6ff05d4a14a323ea0a18787daeb93fde0e48ab18b" "e3daa8f18440301f3e54f2093fe15f4fe951986a8628e98dcd781efbec7a46f2" default))
  '(display-battery-mode 1)
+ '(elcord-editor-icon "emacs_icon")
+ '(elcord-mode t nil (elcord))
+ '(elcord-use-major-mode-as-main-icon t)
  '(magit-todos-insert-after '(bottom) nil nil "Changed by setter of obsolete option `magit-todos-insert-at'")
  '(org-export-backends '(ascii beamer html icalendar latex man md odt))
  '(org-format-latex-header
@@ -37,12 +40,15 @@
      ("" "color" nil nil)))
  '(org-pretty-entities t)
  '(org-toc-follow-mode t)
- '(org-toc-info-mode t))
+ '(org-toc-info-mode t)
+ '(package-selected-packages '(wakatime-mode activity-watch-mode request)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(org-block-begin-line ((t (:background "#282828"))))
+ '(org-block-end-line ((t (:background "#282828"))))
  '(org-document-title ((t (:height 2.0))))
  '(org-level-1 ((t (:inherit outline-1 :height 1.7))))
  '(org-level-2 ((t (:inherit outline-2 :height 1.6))))
@@ -51,5 +57,7 @@
  '(org-level-5 ((t (:inherit outline-5 :height 1.3))))
  '(org-level-6 ((t (:inherit outline-5 :height 1.2))))
  '(org-level-7 ((t (:inherit outline-5 :height 1.1))))
- '(org-modern-statistics ((t (:inherit org-checkbox-statistics-todo)))))
+ '(org-modern-statistics ((t (:inherit org-checkbox-statistics-todo))))
+ '(org-quote ((t (:foreground "#83a598" :extend t)))))
 (put 'customize-variable 'disabled nil)
+(put 'customize-group 'disabled nil)
