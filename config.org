@@ -228,6 +228,11 @@ good ol keybinds and such
 
 #+RESULTS:
 | try-complete-file-name-partially | try-complete-file-name | try-expand-all-abbrevs | try-expand-list | try-expand-dabbrev | try-expand-dabbrev-all-buffers | try-expand-dabbrev-from-kill | try-expand-line | try-complete-lisp-symbol-partially | try-complete-lisp-symbol |
+** Moving custom functions to another file
+I want more robust error checking cause lisp is hard, and being told when I'm being an idiot can be rather helpful
+
+*** TODO Would be nice to have:
+if I make this into like a pdf, make the exporter go to that file or somethin and embed it's contents somewhere here would be cool
 
 * Looks
 I intend to configure the overal look and feel of my emacs configuration here, as well as any packages/modules that would affect how it looks and feels
@@ -490,7 +495,8 @@ in newer versions of emacs they seem to have added the functionality to have a t
 Honestly still not sure which one I want to use, so I'll enable both ones foss and free (BASED ALERT) the other is not free NOT BASED ALERT
 *** WakaTime
 #+begin_src emacs-lisp
-(global-wakatime-mode)
+(use-package wakatime-mode
+  :ensure t)
 #+end_src
 *** ActivityWatch
 #+begin_src emacs-lisp

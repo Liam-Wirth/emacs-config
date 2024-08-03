@@ -314,7 +314,8 @@
       (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
 (global-set-key (kbd "<f12>") 'kb/toggle-window-transparency)
 
-(global-wakatime-mode)
+(use-package wakatime-mode
+  :ensure t)
 
 (global-activity-watch-mode)
 
