@@ -4,6 +4,15 @@
 #+options: coverpage yes
 #+latex_class: chameleon
 
+!!!! IMPORTANT !!!
+#+begin_src emacs-lisp
+;; (setq debug-on-error t)
+;; (setq debug-on-interrupt t)
+;; (setq debug-init t)
+#+end_src
+
+#+RESULTS:
+
 * TODO Emacs config
 TODO: Fix the following
 1. LSP Broken
@@ -253,7 +262,7 @@ To See stuff responsible for org mode look and feel, see:
 
 (set-face-attribute 'default nil
                     :font "JetBrains Mono NerdFont"
-                    :height 140
+                    :height 110
                     :weight 'medium)
 (set-face-attribute 'variable-pitch nil
                     :font "Overpass"
@@ -498,14 +507,7 @@ Honestly still not sure which one I want to use, so I'll enable both ones foss a
 (use-package wakatime-mode
   :ensure t)
 #+end_src
-*** ActivityWatch
-#+begin_src emacs-lisp
-(global-activity-watch-mode)
-#+end_src
-
-#+RESULTS:
-: t
-
+*** TODO ActivityWatch
 
 ** Which-Key
 it's like the one from neovim? (or is it the other way around?)
@@ -539,20 +541,22 @@ everyone MUST KNOW I'M USING EMACS (as well as vim)
 ** Mixed Pitch
 *** Setting the Variable-Pitch Serrif Font
 #+begin_src emacs-lisp
-(defface variable-pitch-serif
-    '((t (:family "serif")))
-    "A variable-pitch face with serifs."
-    :group 'basic-faces)
+;; (defface variable-pitch-serif
+    ;; '((t (:family "serif")))
+    ;; "A variable-pitch face with serifs."
+    ;; :group 'basic-faces)
 
-(defcustom variable-pitch-serif-font (font-spec :family "serif")
-  "The font face used for `variable-pitch-serif'."
-  :group 'basic-faces
-  :type '(restricted-sexp :tag "font-spec" :match-alternatives (fontp))
-  :set (lambda (symbol value)
-         (set-face-attribute 'variable-pitch-serif nil :font value)
-         (set-default-toplevel-value symbol value)))
+;; (defcustom variable-pitch-serif-font (font-spec :family "serif")
+  ;; "The font face used for `variable-pitch-serif'."
+  ;; :group 'basic-faces
+  ;; :type '(restricted-sexp :tag "font-spec" :match-alternatives (fontp))
+  ;; :set (lambda (symbol value)
+         ;; (set-face-attribute 'variable-pitch-serif nil :font value)
+         ;; (set-default-toplevel-value symbol value)))
 
 #+end_src
+
+#+RESULTS:
 
 (lifted straight from the tecosaur config)
 #+begin_src emacs-lisp
@@ -681,6 +685,10 @@ This is intended to be used with org-redisplay-inline-images."
 
 * Org
 the swag
+
+#+RESULTS:
+| (org :tools) | ... |
+
 ** Hooks
 *** Org Modern Hooks
 the key to it looking *pretty*
@@ -1690,6 +1698,17 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 | lambda | nil | (when (equal org-state DONE) (my/org-roam-copy-heading-to-today)) |
 | lambda | nil | (when (equal org-state DONE) (my/org-roam-copy-todo-to-today))    |
 
+*** Expand headings:
+#+begin_src emacs-lisp
+(defun my/doom-org-expand-all ()
+  "Expand all collapsed headings in the current Org-mode buffer."
+  (interactive)
+  (org-show-all '(blocks headlines)))
+#+end_src
+
+#+RESULTS:
+: my/doom-org-expand-all
+
 * Language Stuff
 doom emacs is super nice in having a lot of easy configuration found in the [[doomdir: init.el][init.el]] file, but for anything that doesn't come with doom, I likely have to add it to the [[doomdir:packages.el][packages.el]] file, and handle it here
 either that, or just specify options for stuff that needs it
@@ -1942,14 +1961,10 @@ gangster swagger
 #+begin_src emacs-lisp
 (use-package! graphviz-dot-mode
   :commands graphviz-dot-mode
-  :mode '("\\.dot\\'" . graphviz-dot-mode)
+  :mode ("\\.dot\\'" . graphviz-dot-mode)
   :init
   (after! org
-    (setcdr (assoc "dot" org-src-lang-modes)
-            'graphviz-dot)))
-
-(use-package! company-graphviz-dot
-  :after graphviz-dot-mode)
+    (setcdr (assoc "dot" org-src-lang-modes) 'graphviz-dot)))
 #+end_src
 
 #+RESULTS:

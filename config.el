@@ -1,3 +1,7 @@
+;; (setq debug-on-error t)
+;; (setq debug-on-interrupt t)
+;; (setq debug-init t)
+
 ;; -*- lexical-binding: t -*-
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
@@ -152,7 +156,7 @@
 
 (set-face-attribute 'default nil
                     :font "JetBrains Mono NerdFont"
-                    :height 140
+                    :height 110
                     :weight 'medium)
 (set-face-attribute 'variable-pitch nil
                     :font "Overpass"
@@ -317,8 +321,6 @@
 (use-package wakatime-mode
   :ensure t)
 
-(global-activity-watch-mode)
-
 (after! which-key
   (setq which-key-idle-delay 0.2))
 
@@ -335,18 +337,18 @@
   :config
   (setq elcord-use-major-mode-as-main-icon t))
 
-(defface variable-pitch-serif
-    '((t (:family "serif")))
-    "A variable-pitch face with serifs."
-    :group 'basic-faces)
+;; (defface variable-pitch-serif
+    ;; '((t (:family "serif")))
+    ;; "A variable-pitch face with serifs."
+    ;; :group 'basic-faces)
 
-(defcustom variable-pitch-serif-font (font-spec :family "serif")
-  "The font face used for `variable-pitch-serif'."
-  :group 'basic-faces
-  :type '(restricted-sexp :tag "font-spec" :match-alternatives (fontp))
-  :set (lambda (symbol value)
-         (set-face-attribute 'variable-pitch-serif nil :font value)
-         (set-default-toplevel-value symbol value)))
+;; (defcustom variable-pitch-serif-font (font-spec :family "serif")
+  ;; "The font face used for `variable-pitch-serif'."
+  ;; :group 'basic-faces
+  ;; :type '(restricted-sexp :tag "font-spec" :match-alternatives (fontp))
+  ;; :set (lambda (symbol value)
+         ;; (set-face-attribute 'variable-pitch-serif nil :font value)
+         ;; (set-default-toplevel-value symbol value)))
 
 ;;(defvar mixed-pitch-modes '(org-mode LaTeX-mode markdown-mode gfm-mode Info-mode)
 ;;  "Modes that `mixed-pitch-mode' should be enabled in, but only after UI initialisation.")
@@ -1230,6 +1232,11 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
                (when (equal org-state "DONE")
                  (my/org-roam-copy-heading-to-today))))
 
+(defun my/doom-org-expand-all ()
+  "Expand all collapsed headings in the current Org-mode buffer."
+  (interactive)
+  (org-show-all '(blocks headlines)))
+
 (use-package! flycheck
   :ensure t
   :defer t
@@ -1351,14 +1358,10 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 
 (use-package! graphviz-dot-mode
   :commands graphviz-dot-mode
-  :mode '("\\.dot\\'" . graphviz-dot-mode)
+  :mode ("\\.dot\\'" . graphviz-dot-mode)
   :init
   (after! org
-    (setcdr (assoc "dot" org-src-lang-modes)
-            'graphviz-dot)))
-
-(use-package! company-graphviz-dot
-  :after graphviz-dot-mode)
+    (setcdr (assoc "dot" org-src-lang-modes) 'graphviz-dot)))
 
 (setq yas-triggers-in-field t)
 
