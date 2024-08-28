@@ -35,116 +35,6 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
-;; Some functionality uses this to identify you, e.g. GPG configuration, email
-;; clients, file templates and snippets. It is optional.
- (setq user-full-name "Liam Wirth"
-       user-mail-address "ltwirth@asu.edu")
-
-
-;; If you use `org' and don't want your org files in the default location below,
-;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
-;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
-;; I thought to myself "why not try to combine the two?"
-(setq org-agenda-files '("~/org/roam/daily/"))
-
-(unless (file-exists-p (expand-file-name "persp" doom-cache-dir))
-  (make-directory (expand-file-name "persp/" doom-cache-dir) t))
-(defun my/persp-save-session-with-name (name)
-  "save the current session with a specified NAME."
-  (interactive "sEnter session name: ")
-  (persp-save-state-to-file (concat persp-save-dir name)))
-
-
-
-(after! persp-mode)
-  ;;by default persp save dir is .config/emacs/.local/etc/workspaces I'm chill w/ that
-
-(setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
-      evil-want-fine-undo t                       ; By default while in insert all changes are one big blob. Be more granular
-      auto-save-default t                         ; Nobody likes to loose work, I certainly don't
-      truncate-string-ellipsis "…"                ; Unicode ellispis are nicer than "...", and also save /precious/ space
-      password-cache-expiry nil                   ; I can trust my computers ... can't I?
-      scroll-preserve-screen-position 'always     ; Don't have `point' jump around
-      scroll-margin 2                             ; It's nice to maintain a little margin
-      display-time-default-load-average nil       ; I don't think I've ever found this useful
-      display-line-numbers-type 'relative         ; RelNum ON TOP
-      )
-
-
-(display-time-mode 1)                             ; Enable time in the mode-line
-(global-subword-mode 1)                           ; Iterate through CamelCase words
-(pixel-scroll-precision-mode t)                   ; Turn on pixel scrolling
-
-
-
-(setq-default
- delete-by-moving-to-trash t                      ; Delete files to trash
- window-combination-resize t                      ; take new window space from all other windows (not just current)
- x-stretch-cursor t                               ; Stretch cursor to the glyph width
- show-paren-mode 1                                ; Highlight Matching Parenthesis
- abbrev-mode t                                    ; erm..
-)
-
-(add-to-list 'default-frame-alist '(width . 92))
-(add-to-list 'default-frame-alist '(height . 40))
-
-(setq evil-vsplit-window-right t
-      evil-split-window-below t)
-
-(setq frame-title-format
-      '(""
-        (:eval
-         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-             (replace-regexp-in-string
-              ".*/[0-9]*-?" "☰ "
-              (subst-char-in-string ?_ ?  buffer-file-name))
-           "%b"))
-        (:eval
-         (let ((project-name (projectile-project-name)))
-           (unless (string= "-" project-name)
-             (format (if (buffer-modified-p)  " ◉ %s" "  ●  %s") project-name))))))
-
-(setq-default custom-file (expand-file-name ".custom.el" doom-private-dir))
-(when (file-exists-p custom-file)
-  (load custom-file))
-
-(defadvice! prompt-for-buffer (&rest _)
-  :after '(evil-window-split evil-window-vsplit)
-  (consult-buffer))
-
-(map! :map evil-window-map
-      "SPC" #'rotate-layout
-      ;; Navigation
-      "<left>"     #'evil-window-left
-      "<down>"     #'evil-window-down
-      "<up>"       #'evil-window-up
-      "<right>"    #'evil-window-right
-      ;; Swapping windows
-      "C-<left>"       #'+evil/window-move-left
-      "C-<down>"       #'+evil/window-move-down
-      "C-<up>"         #'+evil/window-move-up
-      "C-<right>"      #'+evil/window-move-right)
-
-(setq evil-vsplit-window-right t
-      evil-split-window-below t)
-(defadvice! prompt-for-buffer (&rest _)
-  :after '(evil-window-split evil-window-vsplit)
-  (consult-buffer))
-
-(global-set-key [remap dabbrev-expand] #'hippie-expand)
-(setq hippie-expand-try-functions-list
-      '(try-complete-file-name-partially
-        try-complete-file-name
-        try-expand-all-abbrevs
-        try-expand-list
-        try-expand-dabbrev
-        try-expand-dabbrev-all-buffers
-        try-expand-dabbrev-from-kill
-        try-expand-line
-        try-complete-lisp-symbol-partially
-        try-complete-lisp-symbol))
-
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
 ;; - `doom-font' -- the primary font to use
@@ -294,6 +184,15 @@
   "Insert the splash phrase surrounded by newlines."
   (insert "\n" (splash-phrase-dashboard-formatted) "\n"))
 
+(after! dashboard
+  (setq +doom-dashboard-menu-sections
+        '(("Open today's daily note"
+           :icon (all-the-icons-octicon "calendar" :face 'doom-dashboard-menu-title)
+           :when (lambda () t)
+           :action open-or-create-daily-note)
+          ;; other dashboard menu items
+          )))
+
 (after! centaur-tabs
 
   (setq centaur-tabs-height 36
@@ -320,6 +219,8 @@
 
 (use-package wakatime-mode
   :ensure t)
+
+(global-wakatime-mode t)
 
 (after! which-key
   (setq which-key-idle-delay 0.2))
@@ -455,6 +356,49 @@ This is intended to be used with org-redisplay-inline-images."
           (dired-toggle-marks)))                             ; unmark all
     (message "Error: Does not work outside dired-mode")      ; can't work not in dired-mode
     (ding)))                                                 ; error sound
+
+(map! :leader
+      (:prefix ("e" . "explorer")
+       :desc "Toggle Treemacs" "t" #'treemacs))
+
+;; Custom todo states
+(setq org-todo-keywords
+      '((sequence "TODO(t)" "NEXT(n)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)" "SOMEDAY(s)")))
+
+;; Custom faces for the todo states
+(setq org-todo-keyword-faces
+      '(("TODO" . org-warning)
+        ("NEXT" . "orange")
+        ("WAITING" . "yellow")
+        ("CANCELLED" . (:foreground "blue" :weight bold :strike-through t))
+        ("SOMEDAY" . (:foreground "magenta" :weight bold))))
+
+;; Setup org-agenda for that jawn
+ (setq org-agenda-custom-commands
+      '(("c" "Simple agenda view"
+         ((agenda "")
+          (todo "TODO")
+          (todo "NEXT")
+          (todo "WAITING")
+          (todo "SOMEDAY")))))
+
+;; Setup Org agenda to by default exclude cancelled stuff
+(setq org-agenda-todo-ignore-states '("SOMEDAY" "CANCELLED"))
+
+(setq org-agenda-custom-commands
+      '(("S" "Special states"
+         ((todo "SOMEDAY|CANCELLED"
+                ((org-agenda-overriding-header "Someday/Maybe and Cancelled items:"))))
+        ("s" "Someday items"
+         ((todo "SOMEDAY"
+                ((org-agenda-overriding-header "Someday/Maybe items:"))))
+        ("c" "Cancelled items"
+         ((todo "CANCELLED"
+                ((org-agenda-overriding-header "Cancelled items:"))))
+        ("a" "Active TODOs (exclude SOMEDAY and CANCELLED)"
+         ((todo ""
+                ((org-agenda-todo-ignore-states '("SOMEDAY" "CANCELLED"))
+                 (org-agenda-overriding-header "Active TODOs (excluding SOMEDAY and CANCELLED):"))))))))))
 
 (after! org (add-hook 'org-mode-hook #'org-modern-mode))
 
@@ -653,7 +597,7 @@ This is intended to be used with org-redisplay-inline-images."
 
 ;; Calibrated based on the TeX font and org-buffer font.
 (plist-put org-format-latex-options :zoom 1.93)
-(after! org (plist-put org-format-latex-options :scale 2.0))
+(after! org (plist-put org-format-latex-options :scale 3.0))
 
 (after! org
   (setq org-roam-directory  "~/org/roam/")
@@ -1070,7 +1014,7 @@ of contents as a string, or nil if it is empty."
 
 (setq org-roam-dailies-capture-templates
       (let ((head
-             (concat "#+title: %<%y-%m-%d (%A)>\n"
+             (concat "#+title: %<%Y-%m-%d (%a)>\n"
                      "#+startup: showall\n"
                      "#+filetags: dailies\n* daily overview\n"
                      "#+export_file_name: ~/org/exported/dalies/"
@@ -1078,21 +1022,21 @@ of contents as a string, or nil if it is empty."
                      "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
                      "#+end_src\n"
                      "#+ Last Daily Entry: "
-                     "\n* [/] do today\n* [/] maybe do today\n* journal\n* [/] Tasks\n")))
+                     "\n* TODO [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
         `(("j" "journal" entry
            "* %<%H:%M> %?"
-           :if-new (file+head+olp "%<%y-%m-%d>.org" ,head ("journal"))
+           :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("journal"))
            :empty-lines 1
            :jump-to-captured t)
           ("t" "do today" item
            "[ ] %i%?"
-           :if-new (file+head+olp "%<%y-%m-%d>.org" ,head ("do today"))
+           :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("do today"))
            :immediate-finish t
            :empty-lines 1
            :jump-to-captured t)
           ("m" "maybe do today" item
            "[ ] %a"
-           :if-new (file+head+olp "%<%y-%m-%d>.org" ,head ("maybe do today"))
+           :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("maybe do today"))
            :immediate-finish t
            :empty-lines 1
            :jump-to-captured t))))
@@ -1135,6 +1079,10 @@ of contents as a string, or nil if it is empty."
           (function my/org-roam-today-mk-agenda-link)
           (function my/get-daily-agenda)))))
 
+;; Add daily files to the default agenda files list
+(setq org-agenda-files (append org-agenda-files
+                               (list "~/org/roam/daily")))
+
 (use-package! org
 :config
 (setq org-fontify-quote-and-verse-blocks t
@@ -1172,19 +1120,19 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 
 (defun my/org-roam-create-daily-file-if-needed ()
   "Create the daily file with the specified template if it doesn't exist."
-  (let* ((date-string (format-time-string "%y-%m-%d"))
+  (let* ((date-string (format-time-string "%Y-%m-%d"))
          (file-name (concat date-string ".org"))
          (file-path (expand-file-name file-name "~/org/roam/daily"))
          (file-exists (file-exists-p file-path))
-         (template (concat "#+title: " date-string " (%A)\n"
+         (template (concat "#+title: " date-string " (%a)\n"
                            "#+startup: showall\n"
-                           "#+filetags: dailies\n* daily overview\n"
+                           "#+Filetags: dailies\n* daily overview\n"
                            "#+export_file_name: ~/org/exported/dalies/"
                            "\n#+begin_src emacs-lisp :results value raw\n"
                            "(as/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
                            "#+end_src\n"
                            "#+ Last Daily Entry: "
-                           "\n* [/] do today\n* [/] maybe do today\n* journal\n* [/] Tasks\n")))
+                           "\n* TODO [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
         (unless file-exists
       (with-temp-buffer
         (insert template)
@@ -1192,14 +1140,17 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
     file-path))
 
 (defun my/org-roam-copy-heading-to-today ()
-  "Copy the heading of a completed TODO to today's daily file with 'DONE' before it and link back to the original, avoiding duplicates."
+  "Copy the heading of a completed TODO to today's daily file with 'DONE' before it and link back to the original using Org-roam ID, avoiding duplicates."
   (interactive)
   (let* ((today-file (my/org-roam-create-daily-file-if-needed))
          (original-file (buffer-file-name))
          (heading (save-excursion
                     (org-back-to-heading t)
                     (org-get-heading t t t t)))
-         (link-to-original (org-link-make-string (concat "file:" (expand-file-name original-file)) heading))
+         (org-roam-id (org-roam-id-at-point))
+         (link-to-original (if org-roam-id
+                               (org-link-make-string (concat "id:" org-roam-id) heading)
+                             (org-link-make-string (concat "file:" (expand-file-name original-file)) heading)))
          (entry (format "** DONE %s\n   %s" heading link-to-original))
          (already-added nil))
     ;; Check if the heading is already in the daily file
@@ -1207,16 +1158,17 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
       (goto-char (point-min))
       (while (re-search-forward (format "^\*\* DONE %s" (regexp-quote heading)) nil t)
         (setq already-added t)))
-
-    ;; Only append if the heading is not already in the file
+   ;; Only append if the heading is not already in the file
     (unless already-added
       (with-current-buffer (find-file-noselect today-file)
-        (goto-char (point-max))
-        ;; Ensure "Tasks" heading exists
-        (unless (re-search-forward "^\* \\[\\/] Tasks" nil t)
+        (goto-char (point-min))
+        ;; Ensure "Tasks" heading exists, but only insert if it doesn't
+        (unless (re-search-forward "^\* \\[\\/] Completed Tasks" nil t)
           (goto-char (point-max))
-          (insert "\n* [1/1] Tasks\n"))
-        (goto-char (point-max))
+          (insert "\n* [/] Completed Tasks\n"))
+        ;; Now move to the end of the "Tasks" section
+        (re-search-forward "^\* \\[\\/] Completed Tasks" nil t)
+        (outline-end-of-subtree)
         ;; Insert only the heading and link
         (insert (format "\n%s\n" entry))
         (save-buffer)))))
