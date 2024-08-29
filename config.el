@@ -35,6 +35,116 @@
 ;; You can also try 'gd' (or 'C-c c d') to jump to their definition and see how
 ;; they are implemented.
 
+;; Some functionality uses this to identify you, e.g. GPG configuration, email
+;; clients, file templates and snippets. It is optional.
+ (setq user-full-name "Liam Wirth"
+       user-mail-address "ltwirth@asu.edu")
+
+
+;; If you use `org' and don't want your org files in the default location below,
+;; change `org-directory'. It must be set before org loads!
+(setq org-directory "~/org/")
+;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
+;; I thought to myself "why not try to combine the two?"
+(setq org-agenda-files '("~/org/roam/daily/"))
+
+(unless (file-exists-p (expand-file-name "persp" doom-cache-dir))
+  (make-directory (expand-file-name "persp/" doom-cache-dir) t))
+(defun my/persp-save-session-with-name (name)
+  "save the current session with a specified NAME."
+  (interactive "sEnter session name: ")
+  (persp-save-state-to-file (concat persp-save-dir name)))
+
+
+
+(after! persp-mode)
+  ;;by default persp save dir is .config/emacs/.local/etc/workspaces I'm chill w/ that
+
+(setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
+      evil-want-fine-undo t                       ; By default while in insert all changes are one big blob. Be more granular
+      auto-save-default t                         ; Nobody likes to loose work, I certainly don't
+      truncate-string-ellipsis "…"                ; Unicode ellispis are nicer than "...", and also save /precious/ space
+      password-cache-expiry nil                   ; I can trust my computers ... can't I?
+      scroll-preserve-screen-position 'always     ; Don't have `point' jump around
+      scroll-margin 2                             ; It's nice to maintain a little margin
+      display-time-default-load-average nil       ; I don't think I've ever found this useful
+      display-line-numbers-type 'relative         ; RelNum ON TOP
+      )
+
+
+(display-time-mode 1)                             ; Enable time in the mode-line
+(global-subword-mode 1)                           ; Iterate through CamelCase words
+(pixel-scroll-precision-mode t)                   ; Turn on pixel scrolling
+
+
+
+(setq-default
+ delete-by-moving-to-trash t                      ; Delete files to trash
+ window-combination-resize t                      ; take new window space from all other windows (not just current)
+ x-stretch-cursor t                               ; Stretch cursor to the glyph width
+ show-paren-mode 1                                ; Highlight Matching Parenthesis
+ abbrev-mode t                                    ; erm..
+)
+
+(add-to-list 'default-frame-alist '(width . 92))
+(add-to-list 'default-frame-alist '(height . 40))
+
+(setq evil-vsplit-window-right t
+      evil-split-window-below t)
+
+(setq frame-title-format
+      '(""
+        (:eval
+         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
+             (replace-regexp-in-string
+              ".*/[0-9]*-?" "☰ "
+              (subst-char-in-string ?_ ?  buffer-file-name))
+           "%b"))
+        (:eval
+         (let ((project-name (projectile-project-name)))
+           (unless (string= "-" project-name)
+             (format (if (buffer-modified-p)  " ◉ %s" "  ●  %s") project-name))))))
+
+(setq-default custom-file (expand-file-name ".custom.el" doom-private-dir))
+(when (file-exists-p custom-file)
+  (load custom-file))
+
+(defadvice! prompt-for-buffer (&rest _)
+  :after '(evil-window-split evil-window-vsplit)
+  (consult-buffer))
+
+(map! :map evil-window-map
+      "SPC" #'rotate-layout
+      ;; Navigation
+      "<left>"     #'evil-window-left
+      "<down>"     #'evil-window-down
+      "<up>"       #'evil-window-up
+      "<right>"    #'evil-window-right
+      ;; Swapping windows
+      "C-<left>"       #'+evil/window-move-left
+      "C-<down>"       #'+evil/window-move-down
+      "C-<up>"         #'+evil/window-move-up
+      "C-<right>"      #'+evil/window-move-right)
+
+(setq evil-vsplit-window-right t
+      evil-split-window-below t)
+(defadvice! prompt-for-buffer (&rest _)
+  :after '(evil-window-split evil-window-vsplit)
+  (consult-buffer))
+
+(global-set-key [remap dabbrev-expand] #'hippie-expand)
+(setq hippie-expand-try-functions-list
+      '(try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-all-abbrevs
+        try-expand-list
+        try-expand-dabbrev
+        try-expand-dabbrev-all-buffers
+        try-expand-dabbrev-from-kill
+        try-expand-line
+        try-complete-lisp-symbol-partially
+        try-complete-lisp-symbol))
+
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
 ;; - `doom-font' -- the primary font to use
@@ -744,7 +854,7 @@ set palette defined ( 0 '%s',\
   (setq org-plot/gnuplot-script-preamble #'+org-plot-generate-theme)
   (setq org-plot/gnuplot-term-extra #'+org-plot-gnuplot-term-properties))
 
-(after! org 
+(after! org
  (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
  )
 
