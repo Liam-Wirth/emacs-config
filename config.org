@@ -139,11 +139,15 @@ another helpful config I found recently:
 #+end_src
 
 #+RESULTS:
+: t
 Its stupid to me that doom wont start in fullscreen by default
 #+begin_src emacs-lisp
 (add-to-list 'default-frame-alist '(width . 92))
 (add-to-list 'default-frame-alist '(height . 40))
 #+end_src
+
+#+RESULTS:
+: ((height . 40) (width . 92) (buffer-predicate . doom-buffer-frame-predicate) (right-divider-width . 1) (bottom-divider-width . 1) (font . JetBrains Mono-15) (vertical-scroll-bars) (tool-bar-lines . 0) (menu-bar-lines . 0) (left-fringe . 8) (right-fringe . 8))
 
 if you for some unholy reason want to split the window to the left, or above when there's only one window open,
 you're a psychopath here, I am setting things up to NOT do that
@@ -1567,7 +1571,7 @@ also, fix this such that it actually works, cause i had to open my config and c-
       (let ((head
              (concat "#+title: %<%Y-%m-%d (%a)>\n"
                      "#+startup: showall\n"
-                     "#+filetags: dailies\n* daily overview\n"
+                     "#+filetags: :dailies:\n* daily overview\n"
                      "#+export_file_name: ~/org/exported/dalies/"
                      "\n#+begin_src emacs-lisp :results value raw\n"
                      "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
@@ -1710,9 +1714,10 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
          (file-name (concat date-string ".org"))
          (file-path (expand-file-name file-name "~/org/roam/daily"))
          (file-exists (file-exists-p file-path))
-         (template (concat "#+title: " date-string " (%a)\n"
+         (template
+             (concat "#+title: %<%Y-%m-%d (%a)>\n"
                            "#+startup: showall\n"
-                           "#+Filetags: dailies\n* daily overview\n"
+                           "#+Filetags: :dailies:\n* daily overview\n"
                            "#+export_file_name: ~/org/exported/dalies/"
                            "\n#+begin_src emacs-lisp :results value raw\n"
                            "(as/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
@@ -1761,8 +1766,9 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
         (re-search-forward "^\* \\[\\/] Completed Tasks" nil t)
         (outline-end-of-subtree)
         ;; Insert only the heading and link
-        (insert (format "\n%s\n" entry))
-        (save-buffer)))))
+        (insert (format "\n%s" entry))
+        (save-buffer))
+      (org-roam-db-sync))))
 
 (defun my/org-roam-handle-todo ()
   "Handle TODO items by copying their heading to today's daily file when their state changes."

@@ -1126,7 +1126,7 @@ of contents as a string, or nil if it is empty."
       (let ((head
              (concat "#+title: %<%Y-%m-%d (%a)>\n"
                      "#+startup: showall\n"
-                     "#+filetags: dailies\n* daily overview\n"
+                     "#+filetags: :dailies:\n* daily overview\n"
                      "#+export_file_name: ~/org/exported/dalies/"
                      "\n#+begin_src emacs-lisp :results value raw\n"
                      "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
@@ -1234,9 +1234,10 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
          (file-name (concat date-string ".org"))
          (file-path (expand-file-name file-name "~/org/roam/daily"))
          (file-exists (file-exists-p file-path))
-         (template (concat "#+title: " date-string " (%a)\n"
+         (template
+             (concat "#+title: %<%Y-%m-%d (%a)>\n"
                            "#+startup: showall\n"
-                           "#+Filetags: dailies\n* daily overview\n"
+                           "#+Filetags: :dailies:\n* daily overview\n"
                            "#+export_file_name: ~/org/exported/dalies/"
                            "\n#+begin_src emacs-lisp :results value raw\n"
                            "(as/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
@@ -1280,8 +1281,9 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
         (re-search-forward "^\* \\[\\/] Completed Tasks" nil t)
         (outline-end-of-subtree)
         ;; Insert only the heading and link
-        (insert (format "\n%s\n" entry))
-        (save-buffer)))))
+        (insert (format "\n%s" entry))
+        (save-buffer))
+      (org-roam-db-sync))))
 
 (defun my/org-roam-handle-todo ()
   "Handle TODO items by copying their heading to today's daily file when their state changes."
