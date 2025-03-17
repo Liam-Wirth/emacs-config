@@ -2,6 +2,11 @@
 ;; (setq debug-on-interrupt t)
 ;; (setq debug-init t)
 
+(add-hook 'doom-first-frame-hook
+          (lambda ()
+            (unless (daemonp) ; Check if Emacs is already a daemon (server)
+              (server-start)))) ; Start the Emacs server if not already running
+
 ;; -*- lexical-binding: t -*-
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
 ;; `after!' block, otherwise Doom's defaults may override your settings. E.g.
@@ -43,22 +48,14 @@
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
-(setq org-directory "~/org/")
+;; (setq org-directory "~/org/")
+(setq org-directory (file-truename "~/org/")) ;; File truename allows for symbolic link resolution
+(setq org-roam-directory (file-truename "~/org/roam/"))
+(md-roam-mode 1)
+(setq md-roam-file-extension "md")
 ;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
 ;; I thought to myself "why not try to combine the two?"
-(setq org-agenda-files '("~/org/roam/daily/"))
-
-(unless (file-exists-p (expand-file-name "persp" doom-cache-dir))
-  (make-directory (expand-file-name "persp/" doom-cache-dir) t))
-(defun my/persp-save-session-with-name (name)
-  "save the current session with a specified NAME."
-  (interactive "sEnter session name: ")
-  (persp-save-state-to-file (concat persp-save-dir name)))
-
-
-
-(after! persp-mode)
-  ;;by default persp save dir is .config/emacs/.local/etc/workspaces I'm chill w/ that
+(setq org-agenda-files '("~/org/roam/daily/" "~/org/"))
 
 (setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
       evil-want-fine-undo t                       ; By default while in insert all changes are one big blob. Be more granular
@@ -90,28 +87,14 @@
 (add-to-list 'default-frame-alist '(height . 40))
 
 (setq evil-vsplit-window-right t
-      evil-split-window-below t)
-
-(setq frame-title-format
-      '(""
-        (:eval
-         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-             (replace-regexp-in-string
-              ".*/[0-9]*-?" "☰ "
-              (subst-char-in-string ?_ ?  buffer-file-name))
-           "%b"))
-        (:eval
-         (let ((project-name (projectile-project-name)))
-           (unless (string= "-" project-name)
-             (format (if (buffer-modified-p)  " ◉ %s" "  ●  %s") project-name))))))
+      evil-split-window-below t
+      ;; evil-split-window-left f
+      ;; evil-split-window-above f
+        )
 
 (setq-default custom-file (expand-file-name ".custom.el" doom-private-dir))
 (when (file-exists-p custom-file)
   (load custom-file))
-
-(defadvice! prompt-for-buffer (&rest _)
-  :after '(evil-window-split evil-window-vsplit)
-  (consult-buffer))
 
 (map! :map evil-window-map
       "SPC" #'rotate-layout
@@ -132,19 +115,6 @@
   :after '(evil-window-split evil-window-vsplit)
   (consult-buffer))
 
-(global-set-key [remap dabbrev-expand] #'hippie-expand)
-(setq hippie-expand-try-functions-list
-      '(try-complete-file-name-partially
-        try-complete-file-name
-        try-expand-all-abbrevs
-        try-expand-list
-        try-expand-dabbrev
-        try-expand-dabbrev-all-buffers
-        try-expand-dabbrev-from-kill
-        try-expand-line
-        try-complete-lisp-symbol-partially
-        try-complete-lisp-symbol))
-
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
 ;;
 ;; - `doom-font' -- the primary font to use
@@ -156,15 +126,15 @@
 
 (set-face-attribute 'default nil
                     :font "JetBrains Mono NerdFont"
-                    :height 110
+                    :height 120
                     :weight 'medium)
 (set-face-attribute 'variable-pitch nil
                     :font "Overpass"
-                    :height 120
+                    :height 130
                     :weight 'medium)
 (set-face-attribute 'fixed-pitch nil
                     :font "JetBrains Mono"
-                    :height 120
+                    :height 130
                     :weight 'medium);; This is working in emacsclient but not emacs.
 ;; Your font must have an italic face available.
 (set-face-attribute 'font-lock-comment-face nil
@@ -173,7 +143,7 @@
 ;; :slant 'italic)
 (set-face-attribute 'doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
 (set-face-attribute 'doom-symbol-font (font-spec :family "JuliaMono"))
-(add-to-list 'default-frame-alist '(font . "JetBrains Mono-15"))
+(add-to-list 'default-frame-alist '(font . "JetBrains Mono-18"))
 
 (setq-default line-spacing 0.05)
 
@@ -208,124 +178,8 @@
       ))
   )
 
-(defvar splash-phrase-source-folder
-  (expand-file-name "misc/splash-phrases" doom-private-dir)
-  "A folder of text files with a fun phrase on each line.")
-
-(defvar splash-phrase-sources
-  (let* ((files (directory-files splash-phrase-source-folder nil "\\.txt\\'"))
-         (sets (delete-dups (mapcar
-                             (lambda (file)
-                               (replace-regexp-in-string "\\(?:-[0-9]+-\\w+\\)?\\.txt" "" file))
-                             files))))
-    (mapcar (lambda (sset)
-              (cons sset
-                    (delq nil (mapcar
-                               (lambda (file)
-                                 (when (string-match-p (regexp-quote sset) file)
-                                   file))
-                               files))))
-            sets))
-  "A list of cons giving the phrase set name, and a list of files which contain phrase components.")
-
-(defvar splash-phrase--cached-lines nil)
-
-(defvar splash-phrase-set
-  (nth (random (length splash-phrase-sources)) (mapcar #'car splash-phrase-sources))
-  "The default phrase set. See `splash-phrase-sources'.")
-
-(defun splash-phrase-set-random-set ()
-  "Set a new random splash phrase set."
-  (interactive)
-  (setq splash-phrase-set
-        (nth (random (1- (length splash-phrase-sources)))
-             (cl-set-difference (mapcar #'car splash-phrase-sources) (list splash-phrase-set))))
-  (+doom-dashboard-reload t))
-
-(defun splash-phrase-select-set ()
-  "Select a specific splash phrase set."
-  (interactive)
-  (setq splash-phrase-set (completing-read "Phrase set: " (mapcar #'car splash-phrase-sources)))
-  (+doom-dashboard-reload t))
-
-(defun splash-phrase-get-from-file (file)
-  "Fetch a random line from FILE."
-  (let ((lines (or (cdr (assoc file splash-phrase--cached-lines))
-                   (cdar (push (cons file
-                                     (with-temp-buffer
-                                       (insert-file-contents (expand-file-name file splash-phrase-source-folder))
-                                       (split-string (string-trim (buffer-string)) "\n")))
-                               splash-phrase--cached-lines)))))
-    (nth (random (length lines)) lines)))
-
-(defun splash-phrase (&optional set)
-  "Construct a splash phrase from SET. See `splash-phrase-sources'."
-  (mapconcat
-   #'splash-phrase-get-from-file
-   (cdr (assoc (or set splash-phrase-set) splash-phrase-sources))
-   " "))
-
-(defun splash-phrase-dashboard-formatted ()
-  "Get a splash phrase, flow it over multiple lines as needed, and fontify it."
-  (mapconcat
-   (lambda (line)
-     (+doom-dashboard--center
-      +doom-dashboard--width
-      (with-temp-buffer
-        (insert-text-button
-         line
-         'action
-         (lambda (_) (+doom-dashboard-reload t))
-         'face 'doom-dashboard-menu-title
-         'mouse-face 'doom-dashboard-menu-title
-         'help-echo "Random phrase"
-         'follow-link t)
-        (buffer-string))))
-   (split-string
-    (with-temp-buffer
-      (insert (splash-phrase))
-      (setq fill-column (min 70 (/ (* 2 (window-width)) 3)))
-      (fill-region (point-min) (point-max))
-      (buffer-string))
-    "\n")
-   "\n"))
-
-(defun splash-phrase-dashboard-insert ()
-  "Insert the splash phrase surrounded by newlines."
-  (insert "\n" (splash-phrase-dashboard-formatted) "\n"))
-
-(after! dashboard
-  (setq +doom-dashboard-menu-sections
-        '(("Open today's daily note"
-           :icon (all-the-icons-octicon "calendar" :face 'doom-dashboard-menu-title)
-           :when (lambda () t)
-           :action open-or-create-daily-note)
-          ;; other dashboard menu items
-          )))
-
-(after! centaur-tabs
-
-  (setq centaur-tabs-height 36
-        centaur-tabs-set-icons t
-        centaur-tabs-modified-marker "o"
-        centaur-tabs-close-button "×"
-        centaur-tabs-set-bar 'above
-        centaur-tabs-gray-out-icons 'buffer)
-  )
-
 (use-package! info-colors
 :commands (info-colors-fontify-node))
-
-(defvar my-window-alpha 100
-  "I like my window transparency opaque by default")
-(defun kb/toggle-window-transparency ()
-  "Toggle transparency."
-  (interactive)
-  (let ((alpha-transparency 0))
-    (pcase (frame-parameter nil 'alpha-background)
-      (alpha-transparency (set-frame-parameter nil 'alpha-background 100))
-      (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
-(global-set-key (kbd "<f12>") 'kb/toggle-window-transparency)
 
 (use-package wakatime-mode
   :ensure t)
@@ -343,133 +197,25 @@
    ))
 (setq which-key-allow-multiple-replacements t)
 
-(use-package! elcord
-  :commands elcord-mode
-  :config
-  (setq elcord-use-major-mode-as-main-icon t))
-
-;; (defface variable-pitch-serif
-    ;; '((t (:family "serif")))
-    ;; "A variable-pitch face with serifs."
-    ;; :group 'basic-faces)
-
-;; (defcustom variable-pitch-serif-font (font-spec :family "serif")
-  ;; "The font face used for `variable-pitch-serif'."
-  ;; :group 'basic-faces
-  ;; :type '(restricted-sexp :tag "font-spec" :match-alternatives (fontp))
-  ;; :set (lambda (symbol value)
-         ;; (set-face-attribute 'variable-pitch-serif nil :font value)
-         ;; (set-default-toplevel-value symbol value)))
-
-;;(defvar mixed-pitch-modes '(org-mode LaTeX-mode markdown-mode gfm-mode Info-mode)
-;;  "Modes that `mixed-pitch-mode' should be enabled in, but only after UI initialisation.")
-;;(defun init-mixed-pitch-h ()
-;;  "Hook `mixed-pitch-mode' into each mode in `mixed-pitch-modes'.
-;;Also immediately enables `mixed-pitch-modes' if currently in one of the modes."
-;;  (when (memq major-mode mixed-pitch-modes)
-;;    (mixed-pitch-mode 1))
-;;  (dolist (hook mixed-pitch-modes)
-;;    (add-hook (intern (concat (symbol-name hook) "-hook")) #'mixed-pitch-mode)))
-;;(add-hook 'doom-init-ui-hook #'init-mixed-pitch-h)
-;;
-;;(autoload #'mixed-pitch-serif-mode "mixed-pitch"
-;;  "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch." t)
-;;
-;;(setq! variable-pitch-serif-font (font-spec :family "Alegreya" :size 27))
-;;
-;;(after! mixed-pitch
-;;  (setq mixed-pitch-set-height t)
-;;  (set-face-attribute 'variable-pitch-serif nil :font variable-pitch-serif-font)
-;;  (defun mixed-pitch-serif-mode (&optional arg)
-;;    "Change the default face of the current buffer to a serifed variable pitch, while keeping some faces fixed pitch."
-;;    (interactive)
-;;    (let ((mixed-pitch-face 'variable-pitch-serif))
-;;      (mixed-pitch-mode (or arg 'toggle)))))
-;;
-;;(set-char-table-range composition-function-table ?f '(["\\(?:ff?[fijlt]\\)" 0 font-shape-gstring]))
-;;(set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
-
-(defvar +zen-serif-p t
-  "Whether to use a serifed font with `mixed-pitch-mode'.")
-(defvar +zen-org-starhide t
-  "The value `org-modern-hide-stars' is set to.")
-
-(after! writeroom-mode
-  (defvar-local +zen--original-org-indent-mode-p nil)
-  (defvar-local +zen--original-mixed-pitch-mode-p nil)
-  (defun +zen-enable-mixed-pitch-mode-h ()
-    "Enable `mixed-pitch-mode' when in `+zen-mixed-pitch-modes'."
-    (when (apply #'derived-mode-p +zen-mixed-pitch-modes)
-      (if writeroom-mode
-          (progn
-            (setq +zen--original-mixed-pitch-mode-p mixed-pitch-mode)
-            (funcall (if +zen-serif-p #'mixed-pitch-serif-mode #'mixed-pitch-mode) 1))
-        (funcall #'mixed-pitch-mode (if +zen--original-mixed-pitch-mode-p 1 -1)))))
-  (defun +zen-prose-org-h ()
-    "Reformat the current Org buffer appearance for prose."
-    (when (eq major-mode 'org-mode)
-      (setq display-line-numbers nil
-            visual-fill-column-width 60
-            org-adapt-indentation nil)
-      (when (featurep 'org-modern)
-        (setq-local org-modern-star '("🙘" "🙙" "🙚" "🙛")
-                    ;; org-modern-star '("🙐" "🙑" "🙒" "🙓" "🙔" "🙕" "🙖" "🙗")
-                    org-modern-hide-stars +zen-org-starhide)
-        (org-modern-mode -1)
-        (org-modern-mode 1))
-      (setq
-       +zen--original-org-indent-mode-p org-indent-mode)
-      (org-indent-mode -1)))
-  (defun +zen-nonprose-org-h ()
-    "Reverse the effect of `+zen-prose-org'."
-    (when (eq major-mode 'org-mode)
-      (when (bound-and-true-p org-modern-mode)
-        (org-modern-mode -1)
-        (org-modern-mode 1))
-      (when +zen--original-org-indent-mode-p (org-indent-mode 1))))
-  (pushnew! writeroom--local-variables
-            'display-line-numbers
-            'visual-fill-column-width
-            'org-adapt-indentation
-            'org-modern-mode
-            'org-modern-star
-            'org-modern-hide-stars)
-  (add-hook 'writeroom-mode-enable-hook #'+zen-prose-org-h)
-  (add-hook 'writeroom-mode-disable-hook #'+zen-nonprose-org-h))
-
-(defun my/dired-copy-images-links ()
-  "Works only in dired-mode, put in kill-ring,
-ready to be yanked in some other org-mode file,
-the links of marked image files using file-name-base as #+CAPTION.
-If no file marked then do it on all images files of directory.
-No file is moved nor copied anywhere.
-This is intended to be used with org-redisplay-inline-images."
-  (interactive)
-  (if (derived-mode-p 'dired-mode)                           ; if we are in dired-mode
-      (let* ((marked-files (dired-get-marked-files))         ; get marked file list
-             (number-marked-files                            ; store number of marked files
-              (string-to-number                              ; as a number
-               (dired-number-of-marked-files))))             ; for later reference
-        (when (= number-marked-files 0)                      ; if none marked then
-          (dired-toggle-marks)                               ; mark all files
-          (setq marked-files (dired-get-marked-files)))      ; get marked file list
-        (message "Files marked for copy")                    ; info message
-        (dired-number-of-marked-files)                       ; marked files info
-        (kill-new "\n")                                      ; start with a newline
-        (dolist (marked-file marked-files)                   ; walk the marked files list
-          (when (org-file-image-p marked-file)               ; only on image files
-            (kill-append                                     ; append image to kill-ring
-             (concat "#+CAPTION: "                           ; as caption,
-                     (file-name-base marked-file)            ; use file-name-base
-                     "\n[[file:" marked-file "]]\n\n") nil))) ; link to marked-file
-        (when (= number-marked-files 0)                      ; if none were marked then
-          (dired-toggle-marks)))                             ; unmark all
-    (message "Error: Does not work outside dired-mode")      ; can't work not in dired-mode
-    (ding)))                                                 ; error sound
-
 (map! :leader
       (:prefix ("e" . "explorer")
        :desc "Toggle Treemacs" "t" #'treemacs))
+
+(use-package! md-roam
+  :load-path "packages/md-roam" ; Assuming you install md-roam in ~/.doom.d/packages/md-roam/ (adjust if needed)
+  :config
+  (md-roam-mode 1)
+  (setq md-roam-file-extension "md")) ; Optional, defaults to "md"
+
+(after! org-roam
+  (add-to-list 'org-roam-capture-templates
+               '("m" "Markdown" plain ""
+                 :target (file+head "%<%Y-%m-%dT%H%M%S>.md"
+                                   "---\ntitle: ${title}\nid: %<%Y-%m-%dT%H%M%S>\ncategory: \n---\n")
+                 :unnarrowed t)))
+
+(defun my/generate-roam-id ()
+  (format-time-string "%Y%m%d%H%M%S"))
 
 ;; Custom todo states
 (setq org-todo-keywords
@@ -509,6 +255,69 @@ This is intended to be used with org-redisplay-inline-images."
          ((todo ""
                 ((org-agenda-todo-ignore-states '("SOMEDAY" "CANCELLED"))
                  (org-agenda-overriding-header "Active TODOs (excluding SOMEDAY and CANCELLED):"))))))))))
+
+(after! org
+  (use-package! org-modern
+ :config
+(setq org-special-ctrl-a/e t)
+(setq org-insert-heading-respect-content t)
+  ;; appearance
+  (setq org-modern-radio-target    '("❰" t "❱"))
+  (setq org-modern-internal-target '("↪ " t "")) ; TODO: make this not be an emoji, and instead a font lig
+  (setq org-modern-todo t)
+  (setq org-modern-todo-faces
+  '(("TODO" :inverse-video t :inherit org-todo)
+   ("PROJ" :inverse-video t :inherit +org-todo-project)
+   ("STRT" :inverse-video t :inherit +org-todo-active)
+   ("[-]"  :inverse-video t :inherit +org-todo-active)
+   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
+   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
+   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
+   ("KILL" :inverse-video t :inherit +org-todo-cancel)
+   ("NO"   :inverse-video t :inherit +org-todo-cancel)))
+  (setq org-modern-footnote (cons nil (cadr org-script-display)))
+   (setq org-modern-block-name
+   '((t . t)
+     ("src" "»" "«")
+     ("example" "»–" "–«")
+     ("quote" "❝" "❞")
+     ("export" "⏩" "⏪")))
+   (setq org-modern-priority nil)
+   (setq org-modern-progress nil)
+   ; org-modern-horizontal-rule (make-string 36 ?─)
+   (setq org-modern-horizontal-rule "──────────")
+  ; org-modern-hide-stars "·"
+   (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶"))
+   (setq org-modern-keyword
+        '((t . t)
+          ("title" . "𝙏")
+          ("subtitle" . "𝙩")
+          ("author" . "𝘼")
+          ("date" . "𝘿")
+          ("property" . "☸")
+          ("options" . "⌥")
+          ("startup" . "⏻")
+          ("macro" . "𝓜")
+          ("include" . "⇤")
+          ("setupfile" . "⇚")
+          ("html_head" . "🅷")
+          ("html" . "🅗")
+          ("latex_class" . "🄻")
+          ("latex_header" . "🅻")
+          ("latex_header_extra" . "🅻⁺")
+          ("latex" . "🅛")
+          ("beamer_theme" . "🄱")
+          ("beamer_header" . "🅱")
+          ("beamer" . "🅑")
+          ("attr_latex" . "🄛")
+          ("attr_html" . "🄗")
+          ("attr_org" . "⒪")
+          ("name" . "⁍")
+          ("header" . "›")
+          ("caption" . "☰")
+          ("results" . "🠶")))
+  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
+)
 
 (after! org (add-hook 'org-mode-hook #'org-modern-mode))
 
@@ -583,69 +392,6 @@ This is intended to be used with org-redisplay-inline-images."
                 :priority_d    #("⬇" 0 1 (face nerd-icons-green))
                 :priority_e    #("❓" 0 1 (face nerd-icons-blue))))
 
-(after! org
-  (use-package! org-modern
- :config
-(setq org-special-ctrl-a/e t)
-(setq org-insert-heading-respect-content t)
-  ;; appearance
-  (setq org-modern-radio-target    '("❰" t "❱"))
-  (setq org-modern-internal-target '("↪ " t "")) ; TODO: make this not be an emoji, and instead a font lig
-  (setq org-modern-todo t)
-  (setq org-modern-todo-faces
-  '(("TODO" :inverse-video t :inherit org-todo)
-   ("PROJ" :inverse-video t :inherit +org-todo-project)
-   ("STRT" :inverse-video t :inherit +org-todo-active)
-   ("[-]"  :inverse-video t :inherit +org-todo-active)
-   ("HOLD" :inverse-video t :inherit +org-todo-onhold)
-   ("WAIT" :inverse-video t :inherit +org-todo-onhold)
-   ("[?]"  :inverse-video t :inherit +org-todo-onhold)
-   ("KILL" :inverse-video t :inherit +org-todo-cancel)
-   ("NO"   :inverse-video t :inherit +org-todo-cancel)))
-  (setq org-modern-footnote (cons nil (cadr org-script-display)))
-   (setq org-modern-block-name
-   '((t . t)
-     ("src" "»" "«")
-     ("example" "»–" "–«")
-     ("quote" "❝" "❞")
-     ("export" "⏩" "⏪")))
-   (setq org-modern-priority nil)
-   (setq org-modern-progress nil)
-   ; org-modern-horizontal-rule (make-string 36 ?─)
-   (setq org-modern-horizontal-rule "──────────")
-  ; org-modern-hide-stars "·"
-   (setq org-modern-star '("◉" "○" "✸" "✿" "✤" "✜" "◆" "▶"))
-   (setq org-modern-keyword
-        '((t . t)
-          ("title" . "𝙏")
-          ("subtitle" . "𝙩")
-          ("author" . "𝘼")
-          ("date" . "𝘿")
-          ("property" . "☸")
-          ("options" . "⌥")
-          ("startup" . "⏻")
-          ("macro" . "𝓜")
-          ("include" . "⇤")
-          ("setupfile" . "⇚")
-          ("html_head" . "🅷")
-          ("html" . "🅗")
-          ("latex_class" . "🄻")
-          ("latex_header" . "🅻")
-          ("latex_header_extra" . "🅻⁺")
-          ("latex" . "🅛")
-          ("beamer_theme" . "🄱")
-          ("beamer_header" . "🅱")
-          ("beamer" . "🅑")
-          ("attr_latex" . "🄛")
-          ("attr_html" . "🄗")
-          ("attr_org" . "⒪")
-          ("name" . "⁍")
-          ("header" . "›")
-          ("caption" . "☰")
-          ("results" . "🠶")))
-  (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
-)
-
 (map! :after org
       :map org-mode-map
       :localleader
@@ -671,9 +417,6 @@ This is intended to be used with org-redisplay-inline-images."
       :localleader
       :n "o" #'org-edit-src-code)
 
-(after! spell-fu
-  (cl-pushnew 'org-modern-tag (alist-get 'org-mode +spell-excluded-faces-alist)))
-
 (setq org-babel-default-header-args
       '((:session . "none")
         (:results . "replace")
@@ -697,7 +440,6 @@ This is intended to be used with org-redisplay-inline-images."
 
 (require 'org)
 (require 'ob)
-
 (require 'ob-C)
 
 (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
@@ -712,7 +454,59 @@ This is intended to be used with org-redisplay-inline-images."
 (after! org
   (setq org-roam-directory  "~/org/roam/")
   (setq org-modern-mode t)
-  (setq org-roam-completion-everywhere t))
+  (setq org-roam-directory (file-truename "~/org/roam/"))
+  (setq org-roam-completion-everywhere t)
+  (setq org-roam-file-extensions '("org" "md"))
+  (require 'md-roam)
+  (md-roam-mode 1)
+  (org-roam-db-autosync-mode 1)
+)
+
+(use-package! org-similarity
+ :after org  ; Ensure it loads after org-mode
+ :commands (org-similarity-insert-list
+            org-similarity-sidebuffer
+            org-similarity-query) ; Autoload commands
+ :config
+ (setq org-similarity-directory org-roam-directory) ; Or org-directory if not using org-roam
+(setq org-similarity-file-extension-pattern "*.org\\|*.md") ;; Can look at markdown >:)
+ (setq org-similarity-language "english") ; Or your preferred language
+ (setq org-similarity-algorithm "tfidf") ; Or "bm25"
+ (setq org-similarity-number-of-documents 10) ; Adjust as desired
+ (setq org-similarity-min-chars 0) ; Adjust if needed
+ (setq org-similarity-show-scores t) ; Set to t to see similarity scores initially
+ (setq org-similarity-threshold 0.05) ; Adjust if needed
+ (setq org-similarity-use-id-links t) ; Recommended for org-roam v2
+ (setq org-similarity-recursive-search nil) ; Or t for recursive search
+ (setq org-similarity-custom-python-interpreter nil) ; Let it manage venv
+ (setq org-similarity-remove-first nil)
+ (setq org-similarity-heading "** Related notes") ; Customize heading if you like
+ (setq org-similarity-prefix "- ") ; Customize prefix if you like
+ (setq org-similarity-ignore-frontmatter nil) ; Or t to ignore frontmatter
+ )
+
+(use-package! org-roam-timestamps
+  :after org-roam
+  :config (org-roam-timestamps-mode))
+	(after! org-roam
+	(setq org-roam-timestamps-parent-file t)
+	(setq org-roam-timestamps-remember-timestamps t))
+
+(after! org
+(add-to-list 'org-roam-capture-templates
+           '(("w" "Web Capture" plain
+              "* [[%:link][%:title]] :web: :[[file:tags.org::*KEYWORDS][KEYWORDS]]\n  Captured on: %U\n  Source: %:link\n  \n  %input"
+              :unnarrowed t :jump-to-captured t))))
+
+(setq org-roam-capture-ref-templates
+  '(("r" "ref" plain "* %U\n
+%(zp/org-protocol-insert-selection-dwim \"%i\")%?"
+     :target (file+head "web/${slug}.org"
+                        "#+title: ${title}\n
+#+roam_key: ${ref}\n
+#+created: %u\n"  ;; <-- COMMA HERE
+                        )
+     :unnarrowed t)))
 
 (defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
   :around #'doom-modeline-buffer-file-name ; takes no args
@@ -722,57 +516,6 @@ This is intended to be used with org-redisplay-inline-images."
        "🢔(\\1-\\2-\\3) "
        (subst-char-in-string ?_ ?  buffer-file-name))
     (funcall orig-fun)))
-
-(defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
-  :around #'doom-modeline-buffer-file-name ; takes no args
-        (let ((file-name (or buffer-file-name "")))
-  (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-      (concat "🢔(" (my/org-roam-file-name-without-numbers file-name) ")")
-    (funcall orig-fun))))
-
-(defun +yas/org-src-header-p ()
-  "Determine whether `point' is within a src-block header or header-args."
-  (pcase (org-element-type (org-element-context))
-    ('src-block (< (point) ; before code part of the src-block
-                   (save-excursion (goto-char (org-element-property :begin (org-element-context)))
-                                   (forward-line 1)
-                                   (point))))
-    ('inline-src-block (< (point) ; before code part of the inline-src-block
-                          (save-excursion (goto-char (org-element-property :begin (org-element-context)))
-                                          (search-forward "]{")
-                                          (point))))
-    ('keyword (string-match-p "^header-args" (org-element-property :value (org-element-context))))))
-
-(defun +yas/org-prompt-header-arg (arg question values)
-  "Prompt the user to set ARG header property to one of VALUES with QUESTION.
-The default value is identified and indicated. If either default is selected,
-or no selection is made: nil is returned."
-  (let* ((src-block-p (not (looking-back "^#\\+property:[ \t]+header-args:.*" (line-beginning-position))))
-         (default
-          (or
-           (cdr (assoc arg
-                       (if src-block-p
-                           (nth 2 (org-babel-get-src-block-info t))
-                         (org-babel-merge-params
-                          org-babel-default-header-args
-                          (let ((lang-headers
-                                 (intern (concat "org-babel-default-header-args:"
-                                                 (+yas/org-src-lang)))))
-                            (when (boundp lang-headers) (eval lang-headers t)))))))
-           ""))
-         default-value)
-    (setq values (mapcar
-                  (lambda (value)
-                    (if (string-match-p (regexp-quote value) default)
-                        (setq default-value
-                              (concat value " "
-                                      (propertize "(default)" 'face 'font-lock-doc-face)))
-                      value))
-                  values))
-    (let ((selection (consult--read values :prompt question :default default-value)))
-      (unless (or (string-match-p "(default)$" selection)
-                  (string= "" selection))
-        selection))))
 
 (defvar +org-plot-term-size '(1050 . 650)
   "The size of the GNUPlot terminal, in the form (WIDTH . HEIGHT).")
@@ -853,6 +596,20 @@ set palette defined ( 0 '%s',\
 
   (setq org-plot/gnuplot-script-preamble #'+org-plot-generate-theme)
   (setq org-plot/gnuplot-term-extra #'+org-plot-gnuplot-term-properties))
+
+(use-package! org-media-note
+  :hook (org-mode .  org-media-note-mode)
+  :bind (
+         ("H-v" . org-media-note-show-interface))  ;; Main entrance
+  :config
+  (setq org-media-note-screenshot-image-dir "~/Notes/imgs/")  ;; Folder to save screenshot
+  )
+
+(after! org-cliplink
+(map! :leader
+      :desc "Org Cliplink"
+      "n l" #'org-cliplink)
+)
 
 (after! org
  (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
@@ -984,155 +741,18 @@ set palette defined ( 0 '%s',\
 (add-to-list 'org-export-filter-item-functions
              '+org-export-latex-fancy-item-checkboxes)
 
-(defadvice! org-html-template-fancier (orig-fn contents info)
-  "Return complete document string after HTML conversion.
-CONTENTS is the transcoded contents string.  INFO is a plist
-holding export options. Adds a few extra things to the body
-compared to the default implementation."
-  :around #'org-html-template
-  (if (or (not org-fancy-html-export-mode) (bound-and-true-p org-msg-export-in-progress))
-      (funcall orig-fn contents info)
-    (concat
-     (when (and (not (org-html-html5-p info)) (org-html-xhtml-p info))
-       (let* ((xml-declaration (plist-get info :html-xml-declaration))
-              (decl (or (and (stringp xml-declaration) xml-declaration)
-                        (cdr (assoc (plist-get info :html-extension)
-                                    xml-declaration))
-                        (cdr (assoc "html" xml-declaration))
-                        "")))
-         (when (not (or (not decl) (string= "" decl)))
-           (format "%s\n"
-                   (format decl
-                           (or (and org-html-coding-system
-                                    (fboundp 'coding-system-get)
-                                    (coding-system-get org-html-coding-system 'mime-charset))
-                               "iso-8859-1"))))))
-     (org-html-doctype info)
-     "\n"
-     (concat "<html"
-             (cond ((org-html-xhtml-p info)
-                    (format
-                     " xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"%s\" xml:lang=\"%s\""
-                     (plist-get info :language) (plist-get info :language)))
-                   ((org-html-html5-p info)
-                    (format " lang=\"%s\"" (plist-get info :language))))
-             ">\n")
-     "<head>\n"
-     (org-html--build-meta-info info)
-     (org-html--build-head info)
-     (org-html--build-mathjax-config info)
-     "</head>\n"
-     "<body>\n<input type='checkbox' id='theme-switch'><div id='page'><label id='switch-label' for='theme-switch'></label>"
-     (let ((link-up (org-trim (plist-get info :html-link-up)))
-           (link-home (org-trim (plist-get info :html-link-home))))
-       (unless (and (string= link-up "") (string= link-home ""))
-         (format (plist-get info :html-home/up-format)
-                 (or link-up link-home)
-                 (or link-home link-up))))
-     ;; Preamble.
-     (org-html--build-pre/postamble 'preamble info)
-     ;; Document contents.
-     (let ((div (assq 'content (plist-get info :html-divs))))
-       (format "<%s id=\"%s\">\n" (nth 1 div) (nth 2 div)))
-     ;; Document title.
-     (when (plist-get info :with-title)
-       (let ((title (and (plist-get info :with-title)
-                         (plist-get info :title)))
-             (subtitle (plist-get info :subtitle))
-             (html5-fancy (org-html--html5-fancy-p info)))
-         (when title
-           (format
-            (if html5-fancy
-                "<header class=\"page-header\">%s\n<h1 class=\"title\">%s</h1>\n%s</header>"
-              "<h1 class=\"title\">%s%s</h1>\n")
-            (if (or (plist-get info :with-date)
-                    (plist-get info :with-author))
-                (concat "<div class=\"page-meta\">"
-                        (when (plist-get info :with-date)
-                          (org-export-data (plist-get info :date) info))
-                        (when (and (plist-get info :with-date) (plist-get info :with-author)) ", ")
-                        (when (plist-get info :with-author)
-                          (org-export-data (plist-get info :author) info))
-                        "</div>\n")
-              "")
-            (org-export-data title info)
-            (if subtitle
-                (format
-                 (if html5-fancy
-                     "<p class=\"subtitle\" role=\"doc-subtitle\">%s</p>\n"
-                   (concat "\n" (org-html-close-tag "br" nil info) "\n"
-                           "<span class=\"subtitle\">%s</span>\n"))
-                 (org-export-data subtitle info))
-              "")))))
-     contents
-     (format "</%s>\n" (nth 1 (assq 'content (plist-get info :html-divs))))
-     ;; Postamble.
-     (org-html--build-pre/postamble 'postamble info)
-     ;; Possibly use the Klipse library live code blocks.
-     (when (plist-get info :html-klipsify-src)
-       (concat "<script>" (plist-get info :html-klipse-selection-script)
-               "</script><script src=\""
-               org-html-klipse-js
-               "\"></script><link rel=\"stylesheet\" type=\"text/css\" href=\""
-               org-html-klipse-css "\"/>"))
-     ;; Closing document.
-     "</div>\n</body>\n</html>")))
-
-(defadvice! org-html-toc-linked (depth info &optional scope)
-  "Build a table of contents.
-
-Just like `org-html-toc', except the header is a link to \"#\".
-
-DEPTH is an integer specifying the depth of the table.  INFO is
-a plist used as a communication channel.  Optional argument SCOPE
-is an element defining the scope of the table.  Return the table
-of contents as a string, or nil if it is empty."
-  :override #'org-html-toc
-  (let ((toc-entries
-         (mapcar (lambda (headline)
-                   (cons (org-html--format-toc-headline headline info)
-                         (org-export-get-relative-level headline info)))
-                 (org-export-collect-headlines info depth scope))))
-    (when toc-entries
-      (let ((toc (concat "<div id=\"text-table-of-contents\">"
-                         (org-html--toc-text toc-entries)
-                         "</div>\n")))
-        (if scope toc
-          (let ((outer-tag (if (org-html--html5-fancy-p info)
-                               "nav"
-                             "div")))
-            (concat (format "<%s id=\"table-of-contents\">\n" outer-tag)
-                    (let ((top-level (plist-get info :html-toplevel-hlevel)))
-                      (format "<h%d><a href=\"#\" style=\"color:inherit; text-decoration: none;\">%s</a></h%d>\n"
-                              top-level
-                              (org-html--translate "Table of Contents" info)
-                              top-level))
-                    toc
-                    (format "</%s>\n" outer-tag))))))))
-
-(setq org-html-style-plain org-html-style-default
-      org-html-htmlize-output-type 'css
-      org-html-doctype "html5"
-     )
-
-;(defun my/insert-previous-daily-link ()
-;  "insert link to the previous daily note, if available."
-;  (interactive)
-;  (let ((prev-note (org-roam-dailies-find-previous-note)))
-;    (when prev-note
-;      (insert (format "[[%s][previous daily note]]\n" prev-note)))))
-
+(after! org-roam-dailies
 (setq org-roam-dailies-capture-templates
       (let ((head
              (concat "#+title: %<%Y-%m-%d (%a)>\n"
                      "#+startup: showall\n"
                      "#+filetags: :dailies:\n* daily overview\n"
-                     "#+export_file_name: ~/org/exported/dalies/"
+                     "#+export_file_name: ~/org/exported/dailies/"
                      "\n#+begin_src emacs-lisp :results value raw\n"
-                     "(as/get-daily-agenda \"%<%Y-%m-%d>\")\n"
+                     "(/get-daily-agenda \"%<%Y-%m-%d>\")\n"
                      "#+end_src\n"
                      "#+ Last Daily Entry: "
-                     "\n* TODO [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
+                     "\n* [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
         `(("j" "journal" entry
            "* %<%H:%M> %?"
            :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("journal"))
@@ -1149,7 +769,7 @@ of contents as a string, or nil if it is empty."
            :if-new (file+head+olp "%<%Y-%m-%d>.org" ,head ("maybe do today"))
            :immediate-finish t
            :empty-lines 1
-           :jump-to-captured t))))
+           :jump-to-captured t)))))
 
 ;; Set up org-agenda-files to include Org Roam dailies directory
 (setq org-agenda-files (append org-agenda-files (list "~/org/roam/daily")))
@@ -1193,23 +813,38 @@ of contents as a string, or nil if it is empty."
 (setq org-agenda-files (append org-agenda-files
                                (list "~/org/roam/daily")))
 
-(use-package! org
-:config
-(setq org-fontify-quote-and-verse-blocks t
-org-highlight-latex-and-related '(native script entities)
-org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a.")))
-;(setq org-export-directory "~/org/exported")
+(use-package! pdf-tools
+  :magic ("%PDF" . pdf-view-mode)
+  :config
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-page))
 
-(require 'org-src)
-(add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t))))
-  (custom-set-faces!
-    `((org-quote)
-      :foreground ,(doom-color 'blue) :extend t)
-    `((org-block-begin-line org-block-end-line)
-      :background ,(doom-color 'bg)))
-  ;; Change how LaTeX and image previews are shown
-  (setq org-highlight-latex-and-related '(native entities script)
-        org-image-actual-width (min (/ (display-pixel-width) 3) 800))
+(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
+
+(use-package! org-noter
+  :defer t
+  :commands (org-noter)
+  ;; Make sure it loads after org and pdf-view are available:
+  :after (org pdf-view)
+  :config
+  ;; Where to store the notes (Org) files if :NOTER_DOCUMENT: is missing:
+  (setq org-noter-notes-search-path '("~/org/roam/" "~/org/notes/"))
+
+  ;; By default, new notes buffer spawns below the PDF; change if you want:
+  (setq org-noter-notes-window-location 'right
+        org-noter-doc-split-fraction '(0.5 . 0.5)
+        org-noter-auto-save-last-location t)
+
+  ;; You can also unify it with org-roam, if desired:
+  (org-noter-enable-org-roam-integration)
+
+  (map! :map org-noter-doc-mode-map
+		:desc "Insert Note"
+		:n (kbd "C-i") #'org-noter-insert-note)
+	(map! :map org-noter-doc-mode-map
+		:n "M-i" #'org-noter-insert-precise-note
+		:desc "Insert Precise Note")
+)
 
 (defun my/org-roam-filter-by-tag (tag-name)
   (lambda (node)
@@ -1228,6 +863,7 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
 ;; Build the agenda list the first time for the session
 (my/org-roam-refresh-agenda-list)
 
+(after! org
 (defun my/org-roam-create-daily-file-if-needed ()
   "Create the daily file with the specified template if it doesn't exist."
   (let* ((date-string (format-time-string "%Y-%m-%d"))
@@ -1240,73 +876,172 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
                            "#+Filetags: :dailies:\n* daily overview\n"
                            "#+export_file_name: ~/org/exported/dalies/"
                            "\n#+begin_src emacs-lisp :results value raw\n"
-                           "(as/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
+                           "(my/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
                            "#+end_src\n"
                            "#+ Last Daily Entry: "
-                           "\n* TODO [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
+                           "\n*  [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
         (unless file-exists
       (with-temp-buffer
         (insert template)
         (write-file file-path)))
-    file-path))
+    file-path)))
 
-(defun my/org-roam-copy-heading-to-today ()
-  "Copy the heading of a completed TODO to today's daily file with 'DONE' before it and link back to the original using Org-roam ID, avoiding duplicates."
-  (interactive)
-  (let* ((today-file (my/org-roam-create-daily-file-if-needed))
-         (original-file (buffer-file-name))
-         (heading (save-excursion
-                    (org-back-to-heading t)
-                    (org-get-heading t t t t)))
-         (org-roam-id (org-roam-id-at-point))
-         (link-to-original (if org-roam-id
-                               (org-link-make-string (concat "id:" org-roam-id) heading)
-                             (org-link-make-string (concat "file:" (expand-file-name original-file)) heading)))
-         (entry (format "** DONE %s\n   %s" heading link-to-original))
-         (already-added nil))
-    ;; Check if the heading is already in the daily file
-    (with-current-buffer (find-file-noselect today-file)
-      (goto-char (point-min))
-      (while (re-search-forward (format "^\*\* DONE %s" (regexp-quote heading)) nil t)
-        (setq already-added t)))
-   ;; Only append if the heading is not already in the file
-    (unless already-added
+(after! org
+  (defun my/org-roam-copy-heading-to-today ()
+    "Copy the heading of a completed TODO to today's daily file with state-specific formatting."
+    (interactive)
+    (let* ((today-file (my/org-roam-create-daily-file-if-needed))
+           (original-file (buffer-file-name))
+           (heading (save-excursion
+                     (org-back-to-heading t)
+                     (org-get-heading t t t t)))
+           (org-roam-id (org-roam-id-at-point))
+           (link-to-original (if org-roam-id
+                                (org-link-make-string (concat "id:" org-roam-id) heading)
+                              (org-link-make-string (concat "file:" (expand-file-name original-file) "::" heading) heading)))
+           (current-state (org-get-todo-state))
+           (status-prefix
+            (cond
+             ((string= current-state "DONE") "✓ DONE")
+             ((string= current-state "KILL") "✗ KILLED")
+             ((string= current-state "WAIT") "⏳ WAITING")
+             ((string= current-state "HOLD") "⏸️ HOLD")
+             ((string= current-state "PROJ") "📌 PROJECT")
+             ((string= current-state "LOOP") "🔄 LOOP")
+             ((string= current-state "STRT") "▶️ STARTED")
+             ((string= current-state "IDEA") "💡 IDEA")
+             ((string= current-state "OKAY") "👍 OKAY")
+             ((string= current-state "YES")  "✅ YES")
+             ((string= current-state "NO")   "❌ NO")
+             ((string= current-state "TODO") "📝 TODO")
+             (t current-state)))
+           (section-name
+            (cond
+             ((string= current-state "DONE") "* [/] Completed Tasks")
+             ((string= current-state "KILL") "* [/] Killed Tasks")
+             ((member current-state '("WAIT" "HOLD")) "* [/] Waiting/Held Tasks")
+             ((member current-state '("YES" "OKAY")) "* [/] Approved Tasks")
+             ((member current-state '("NO")) "* [/] Rejected Tasks")
+             (t "* [/] State Changes")))
+           (entry (format "** %s %s [%s]"
+                         status-prefix
+                         link-to-original
+                         (format-time-string "%Y-%m-%d %a %H:%M")))
+           (already-added nil))
+      ;; Check if the heading is already in the daily file
       (with-current-buffer (find-file-noselect today-file)
         (goto-char (point-min))
-        ;; Ensure "Tasks" heading exists, but only insert if it doesn't
-        (unless (re-search-forward "^\* \\[\\/] Completed Tasks" nil t)
-          (goto-char (point-max))
-          (insert "\n* [/] Completed Tasks\n"))
-        ;; Now move to the end of the "Tasks" section
-        (re-search-forward "^\* \\[\\/] Completed Tasks" nil t)
-        (outline-end-of-subtree)
-        ;; Insert only the heading and link
-        (insert (format "\n%s" entry))
-        (save-buffer))
-      (org-roam-db-sync))))
+        (while (re-search-forward (format "^** [^*]+ %s" (regexp-quote heading)) nil t)
+          (setq already-added t)))
+      ;; Only append if the heading is not already in the file
+      (unless already-added
+        (with-current-buffer (find-file-noselect today-file)
+          (goto-char (point-min))
+          ;; Ensure section heading exists
+          (unless (re-search-forward (regexp-quote section-name) nil t)
+            (goto-char (point-max))
+            (insert "\n" section-name))
+          (re-search-forward (regexp-quote section-name) nil t)
+          (outline-end-of-subtree)
+          (insert "\n" entry)
+          (save-buffer)))
+      (org-roam-db-sync)))
 
-(defun my/org-roam-handle-todo ()
-  "Handle TODO items by copying their heading to today's daily file when their state changes."
+  (defun my/org-roam-handle-todo ()
+    "Handle TODO items by copying their heading to today's daily file when their state changes."
+    (interactive)
+    (let ((current-state (org-get-todo-state)))
+      (when (member current-state
+                    '("DONE" "KILL" "WAIT" "HOLD" "YES" "NO" "OKAY"))
+        (my/org-roam-copy-heading-to-today))))
+  (add-hook 'org-after-todo-state-change-hook #'my/org-roam-handle-todo))
+
+(defun my/org-roam-add-obsidian-compatibility ()
+  "Update each Org-roam note with Obsidian-compatible properties for links and tags."
   (interactive)
-  (when (member org-state '("DONE" "TODO"))
-    (my/org-roam-copy-heading-to-today)))
+  ;; Ensure Org-roam is loaded, and its DB is up-to-date.
+  (require 'org-roam)
+  (org-roam-db-sync)
 
-(add-to-list 'org-after-todo-state-change-hook
-             (lambda ()
-               (when (equal org-state "DONE")
-                 (my/org-roam-copy-heading-to-today))))
+  (message "Starting Org-roam to Obsidian compatibility updates...")
 
-(defun my/doom-org-expand-all ()
-  "Expand all collapsed headings in the current Org-mode buffer."
-  (interactive)
-  (org-show-all '(blocks headlines)))
+  ;; Grab a list of all nodes using org-roam-node-list
+  (let ((nodes (org-roam-node-list)))
+    (dolist (node nodes)
+      (let* ((org-file (org-roam-node-file node))
+             (org-tags (org-roam-node-tags node))
+             (org-filetags (org-roam-node-tags node)) ; Filetags doesn't work so I'm just doin this
+             (all-tags (append org-tags org-filetags))
+             ;; Convert to Obsidian-style tags (#tag)
+             (obsidian-tags (mapcar (lambda (tag) (format "#%s" tag)) all-tags))
+             (tags-string (string-join obsidian-tags " ")))
+
+        ;; Only operate on files that actually exist
+        (when (and org-file (file-exists-p org-file))
+          (with-current-buffer (find-file-noselect org-file)
+            (save-excursion
+              (goto-char (point-min))
+              ;; Check if "File Data" heading already exists in the buffer.
+              (let ((file-data-heading-pos
+                     (org-find-exact-headline-in-buffer "File Data")))
+                (if file-data-heading-pos
+                    (goto-char file-data-heading-pos)  ; jump there if found
+                  (org-insert-heading)                 ; else create new heading
+                  (insert "File Data\n")))
+
+              ;; Collect all Org-roam links in the file
+              (let (wikilinks)
+                (let ((parsed-org (org-element-parse-buffer)))
+                  (org-element-map parsed-org 'link
+                    (lambda (link)
+                      ;; Try to detect an Org-roam link:
+                      (when (my/org-roam-link-p link)
+                        (let* ((target-node (my/org-roam-resolve-link link))
+                               (target-title (and target-node
+                                                  (org-roam-node-title target-node))))
+                          (when target-title
+                            (push (format "[[%s]]" target-title) wikilinks)))))))
+                ;; Store them in a single property if any are found
+                (when wikilinks
+                  (org-set-property "Obsidian-Links"
+                                    (string-join (nreverse wikilinks) " "))))
+
+              ;; Store Obsidian-style tags if any
+              (when (and all-tags (not (string= tags-string "")))
+                (org-set-property "Obsidian-Tags" tags-string))
+
+              (save-buffer))
+            (kill-buffer))))))
+
+  (message "Finished Org-roam to Obsidian compatibility updates."))
+
+(defun my/org-roam-link-p (link)
+  "Return non-nil if LINK is recognized as an Org-roam link.
+This is a simple check for an 'id' link or a file link that Org-roam can handle.
+Adjust if your Org-roam version uses a different convention."
+  (let ((type (org-element-property :type link))
+        (path (org-element-property :path link)))
+    ;; If it's an 'id:' link, see if we can resolve a node from that ID.
+    (cond
+     ((string= type "id")
+      (org-roam-node-from-id path))  ;; returns nil if no node is found
+     ;; If you also want to catch 'file:' links that point to a roam note:
+     ;; ((string= type "file")
+     ;;  ...some check to see if it corresponds to a known Roam note...)
+     (t nil))))
+(defun my/org-roam-resolve-link (link)
+  "Resolve an Org-roam LINK to its corresponding node.
+Returns the Org-roam node if found, otherwise nil."
+  (let ((type (org-element-property :type link))
+        (path (org-element-property :path link)))
+    (when (string= type "id")
+      (org-roam-node-from-id path))))
 
 (use-package! flycheck
   :ensure t
   :defer t
   :diminish
   :init (global-flycheck-mode))
-(ispell-change-dictionary "en_US" t)
 
 (set-file-template! "\\.pro" :trigger "__" :mode 'prolog-mode)
 
@@ -1420,99 +1155,16 @@ org-list-demote-modify-bullet '(("+" . "-") ("-" . "+") ("*" . "+") ("1." . "a."
      (?B    "\\mathbb"        nil          t    nil  nil)
      (?a    "\\abs"           nil          t    nil  nil))))
 
-(use-package! graphviz-dot-mode
-  :commands graphviz-dot-mode
-  :mode ("\\.dot\\'" . graphviz-dot-mode)
-  :init
-  (after! org
-    (setcdr (assoc "dot" org-src-lang-modes) 'graphviz-dot)))
-
 (setq yas-triggers-in-field t)
 
 (use-package! aas
   :commands aas-mode)
 
-;;"A variable-pitch face with serifs."
-;;:group 'basic-faces)
-;;
-;;(defcustom variable-pitch-serif-font (font-spec :family "serif")
-;;"The font face used for `variable-pitch-serif'."
-;;:group 'basic-faces
-;;:set (lambda (symbol value)
-;;(set-face-attribute 'variable-pitch-serif nil :font value)
-;;(set-default-toplevel-value symbol value)))
-;;(setq org-pretty-mode t)
-
-
-
-
-
-
-
-
-;;(after!
-;;:and (org flycheck)
-;;(defconst flycheck-org-lint-form
-;;  (flycheck-prepare-emacs-lisp-form
-;;    (require 'org)
-;;    (require 'org-lint)
-;;    (require 'org-attach)
-;;    (let ((source (car command-line-args-left))
-;;          (process-default-directory default-directory))
-;;      (with-temp-buffer
-;;        (insert-file-contents source 'visit)
-;;        (setq buffer-file-name source)
-;;        (setq default-directory process-default-directory)
-;;        (delay-mode-hooks (org-mode))
-;;        (setq delayed-mode-hooks nil)
-;;        (dolist (err (org-lint))
-;;          (let ((inf (cl-second err)))
-;;            (princ (elt inf 0))
-;;            (princ ": ")
-;;            (princ (elt inf 2))
-;;            (terpri)))))))
-;;
-;;(defconst flycheck-org-lint-variables
-;;  '(org-directory
-;;    org-id-locations
-;;    org-id-locations-file
-;;    org-attach-id-dir
-;;    org-attach-use-inheritance
-;;    org-attach-id-to-path-function-list
-;;    org-link-parameters)
-;;  "Variables inherited by the org-lint subprocess.")
-;;
-;;(defun flycheck-org-lint-variables-form ()
-;;  (require 'org-attach)  ; Needed to make variables available
-;;  `(progn
-;;     ,@(seq-map (lambda (opt) `(setq-default ,opt ',(symbol-value opt)))
-;;                (seq-filter #'boundp flycheck-org-lint-variables))))
-;;
-;;(eval ; To preveant eager macro expansion form loading flycheck early.
-;; '(flycheck-define-checker org-lint
-;;   "Org buffer checker using `org-lint'."
-;;   :command ("emacs" (eval flycheck-emacs-args)
-;;             "--eval" (eval (concat "(add-to-list 'load-path \""
-;;                                    (file-name-directory (locate-library "org"))
-;;                                    "\")"))
-;;             "--eval" (eval (flycheck-sexp-to-string
-;;                             (flycheck-org-lint-variables-form)))
-;;             "--eval" (eval (flycheck-sexp-to-string
-;;                             (flycheck-org-lint-customisations-form)))
-;;             "--eval" (eval flycheck-org-lint-form)
-;;             "--" source)
-;;   :error-patterns
-;;   ((error line-start line ": " (message) line-end))
-;;   :modes org-mode))
-;;
-;;(add-to-list 'flycheck-checkers 'org-lint)
-;;
-;;(defun flycheck-org-lint-customisations-form ()
-;;  `(progn
-;;     (require 'ox)
-;;     (cl-pushnew '(:latex-cover-page nil "coverpage" nil)
-;;                 (org-export-backend-options (org-export-get-backend 'latex)))
-;;     (cl-pushnew '(:latex-font-set nil "fontset" nil)
-;;                 (org-export-backend-options (org-export-get-backend 'latex))))))
-
-
+;; accept completion from copilot and fallback to company
+(use-package! copilot
+  :hook (prog-mode . copilot-mode)
+  :bind (:map copilot-completion-map
+              ("<tab>" . 'copilot-accept-completion)
+              ("TAB" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word)
+              ("C-<tab>" . 'copilot-accept-completion-by-word))):w

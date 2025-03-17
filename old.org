@@ -1,0 +1,515 @@
+#+title: Old
+#+author: Liam Wirth
+#+date: 2025-02-25
+
+
+* This is mostly used just to store old config snippets
+
+** Startup Screen
+this one is gonna be pretty long to configure, but it's largely cause I've lifted a hefty chunk of code that will add silly/stupid splash phrases to the startup screen
+*** Splash-Phrase Tomfoolery
+**** Setting Up The Source Folder
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defvar splash-phrase-source-folder
+  (expand-file-name "misc/splash-phrases" doom-private-dir)
+  "A folder of text files with a fun phrase on each line.")
+#+end_src
+
+#+RESULTS:
+: splash-phrase-source-folder
+
+**** Actually getting the splash-phrases from the source folder
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defvar splash-phrase-sources
+  (let* ((files (directory-files splash-phrase-source-folder nil "\\.txt\\'"))
+         (sets (delete-dups (mapcar
+                             (lambda (file)
+                               (replace-regexp-in-string "\\(?:-[0-9]+-\\w+\\)?\\.txt" "" file))
+                             files))))
+    (mapcar (lambda (sset)
+              (cons sset
+                    (delq nil (mapcar
+                               (lambda (file)
+                                 (when (string-match-p (regexp-quote sset) file)
+                                   file))
+                               files))))
+            sets))
+  "A list of cons giving the phrase set name, and a list of files which contain phrase components.")
+
+#+end_src
+
+#+RESULTS:
+: splash-phrase-sources
+
+**** No Caching Here
+**** Some Functions
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defvar splash-phrase--cached-lines nil)
+#+end_src
+
+#+RESULTS:
+: splash-phrase--cached-lines
+
+***** Randomly choosing the Splash Phrase
+(and making some custom variable hold that value)
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defvar splash-phrase-set
+  (nth (random (length splash-phrase-sources)) (mapcar #'car splash-phrase-sources))
+  "The default phrase set. See `splash-phrase-sources'.")
+#+end_src
+
+#+RESULTS:
+: splash-phrase-set
+
+*****  Picking A Set From The Folder
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defun splash-phrase-set-random-set ()
+  "Set a new random splash phrase set."
+  (interactive)
+  (setq splash-phrase-set
+        (nth (random (1- (length splash-phrase-sources)))
+             (cl-set-difference (mapcar #'car splash-phrase-sources) (list splash-phrase-set))))
+  (+doom-dashboard-reload t))
+#+end_src
+
+#+RESULTS:
+: splash-phrase-set-random-set
+
+or allowing the user to choose one explicitly:
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defun splash-phrase-select-set ()
+  "Select a specific splash phrase set."
+  (interactive)
+  (setq splash-phrase-set (completing-read "Phrase set: " (mapcar #'car splash-phrase-sources)))
+  (+doom-dashboard-reload t))
+#+end_src
+
+#+RESULTS:
+: splash-phrase-select-set
+
+***** Getting One From A File
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defun splash-phrase-get-from-file (file)
+  "Fetch a random line from FILE."
+  (let ((lines (or (cdr (assoc file splash-phrase--cached-lines))
+                   (cdar (push (cons file
+                                     (with-temp-buffer
+                                       (insert-file-contents (expand-file-name file splash-phrase-source-folder))
+                                       (split-string (string-trim (buffer-string)) "\n")))
+                               splash-phrase--cached-lines)))))
+    (nth (random (length lines)) lines)))
+
+#+end_src
+
+#+RESULTS:
+: splash-phrase-get-from-file
+
+***** Getting The Phrase
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defun splash-phrase (&optional set)
+  "Construct a splash phrase from SET. See `splash-phrase-sources'."
+  (mapconcat
+   #'splash-phrase-get-from-file
+   (cdr (assoc (or set splash-phrase-set) splash-phrase-sources))
+   " "))
+#+end_src
+
+#+RESULTS:
+: splash-phrase
+
+**** Making it all Look Pretty
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defun splash-phrase-dashboard-formatted ()
+  "Get a splash phrase, flow it over multiple lines as needed, and fontify it."
+  (mapconcat
+   (lambda (line)
+     (+doom-dashboard--center
+      +doom-dashboard--width
+      (with-temp-buffer
+        (insert-text-button
+         line
+         'action
+         (lambda (_) (+doom-dashboard-reload t))
+         'face 'doom-dashboard-menu-title
+         'mouse-face 'doom-dashboard-menu-title
+         'help-echo "Random phrase"
+         'follow-link t)
+        (buffer-string))))
+   (split-string
+    (with-temp-buffer
+      (insert (splash-phrase))
+      (setq fill-column (min 70 (/ (* 2 (window-width)) 3)))
+      (fill-region (point-min) (point-max))
+      (buffer-string))
+    "\n")
+   "\n"))
+#+end_src
+
+#+RESULTS:
+: splash-phrase-dashboard-formatted
+
+**** Inserting the (now beautified) Splash Phrase into the Dashboard
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(defun splash-phrase-dashboard-insert ()
+  "Insert the splash phrase surrounded by newlines."
+  (insert "\n" (splash-phrase-dashboard-formatted) "\n"))
+#+end_src
+
+#+RESULTS:
+: splash-phrase-dashboard-insert
+
+*** TODO Configuring the Dashboard
+uhhh.... uhhhhmmmmm
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(after! dashboard
+  (setq +doom-dashboard-menu-sections
+        '(("Open today's daily note"
+           :icon (all-the-icons-octicon "calendar" :face 'doom-dashboard-menu-title)
+           :when (lambda () t)
+           :action open-or-create-daily-note)
+          ;; other dashboard menu items
+          )))
+#+end_src
+
+#+RESULTS:
+
+** Centaur Tabs
+I still have little to no clue how emacs window management works
+#+begin_src emacs-lisp :tangle no :tangle no :tangle no
+(after! centaur-tabs
+
+  (setq centaur-tabs-height 36
+        centaur-tabs-set-icons t
+        centaur-tabs-modified-marker "o"
+        centaur-tabs-close-button "×"
+        centaur-tabs-set-bar 'above
+        centaur-tabs-gray-out-icons 'buffer)
+  )
+#+end_src
+
+#+RESULTS:
+: buffer
+
+** Transparency Shenaninigans
+in newer versions of emacs they seem to have added the functionality to have a transparent window. I typically dont mess around with transparent windows but they can be nice to have on occasion. Here I am going to mess around and see if the functionality is worthwile, as well as possibly add a function that lets me update the value in place/toggle it
+
+#+begin_src emacs-lisp :tangle no :tangle no
+(defvar my-window-alpha 100
+  "I like my window transparency opaque by default")
+(defun kb/toggle-window-transparency ()
+  "Toggle transparency."
+  (interactive)
+  (let ((alpha-transparency 0))
+    (pcase (frame-parameter nil 'alpha-background)
+      (alpha-transparency (set-frame-parameter nil 'alpha-background 100))
+      (t (set-frame-parameter nil 'alpha-background alpha-transparency)))))
+(global-set-key (kbd "<f12>") 'kb/toggle-window-transparency)
+#+end_src
+
+#+RESULTS:
+: kb/toggle-window-transparency
+
+** WriteWroom
+#+begin_src emacs-lisp :tangle no :tangle no
+(defvar +zen-serif-p t
+  "Whether to use a serifed font with `mixed-pitch-mode'.")
+(defvar +zen-org-starhide t
+  "The value `org-modern-hide-stars' is set to.")
+
+(after! writeroom-mode
+  (defvar-local +zen--original-org-indent-mode-p nil)
+  (defvar-local +zen--original-mixed-pitch-mode-p nil)
+  (defun +zen-enable-mixed-pitch-mode-h ()
+    "Enable `mixed-pitch-mode' when in `+zen-mixed-pitch-modes'."
+    (when (apply #'derived-mode-p +zen-mixed-pitch-modes)
+      (if writeroom-mode
+          (progn
+            (setq +zen--original-mixed-pitch-mode-p mixed-pitch-mode)
+            (funcall (if +zen-serif-p #'mixed-pitch-serif-mode #'mixed-pitch-mode) 1))
+        (funcall #'mixed-pitch-mode (if +zen--original-mixed-pitch-mode-p 1 -1)))))
+  (defun +zen-prose-org-h ()
+    "Reformat the current Org buffer appearance for prose."
+    (when (eq major-mode 'org-mode)
+      (setq display-line-numbers nil
+            visual-fill-column-width 60
+            org-adapt-indentation nil)
+      (when (featurep 'org-modern)
+        (setq-local org-modern-star '("🙘" "🙙" "🙚" "🙛")
+                    ;; org-modern-star '("🙐" "🙑" "🙒" "🙓" "🙔" "🙕" "🙖" "🙗")
+                    org-modern-hide-stars +zen-org-starhide)
+        (org-modern-mode -1)
+        (org-modern-mode 1))
+      (setq
+       +zen--original-org-indent-mode-p org-indent-mode)
+      (org-indent-mode -1)))
+  (defun +zen-nonprose-org-h ()
+    "Reverse the effect of `+zen-prose-org'."
+    (when (eq major-mode 'org-mode)
+      (when (bound-and-true-p org-modern-mode)
+        (org-modern-mode -1)
+        (org-modern-mode 1))
+      (when +zen--original-org-indent-mode-p (org-indent-mode 1))))
+  (pushnew! writeroom--local-variables
+            'display-line-numbers
+            'visual-fill-column-width
+            'org-adapt-indentation
+            'org-modern-mode
+            'org-modern-star
+            'org-modern-hide-stars)
+  (add-hook 'writeroom-mode-enable-hook #'+zen-prose-org-h)
+  (add-hook 'writeroom-mode-disable-hook #'+zen-nonprose-org-h))
+#+end_src
+
+#+RESULTS:
+
+** Dired
+*** Custom Functions:
+**** TODO Copy Dired Image to org-thigy
+Todo Part: Learn how to use dired obv I understand the basics, but to have more functionality would be really nice
+[[https://org-roam.discourse.group/t/is-there-a-solution-for-images-organization-in-org-roam/925/3][Credit:]]
+#+begin_src emacs-lisp :tangle no :tangle no
+(defun my/dired-copy-images-links ()
+  "Works only in dired-mode, put in kill-ring,
+ready to be yanked in some other org-mode file,
+the links of marked image files using file-name-base as #+CAPTION.
+If no file marked then do it on all images files of directory.
+No file is moved nor copied anywhere.
+This is intended to be used with org-redisplay-inline-images."
+  (interactive)
+  (if (derived-mode-p 'dired-mode)                           ; if we are in dired-mode
+      (let* ((marked-files (dired-get-marked-files))         ; get marked file list
+             (number-marked-files                            ; store number of marked files
+              (string-to-number                              ; as a number
+               (dired-number-of-marked-files))))             ; for later reference
+        (when (= number-marked-files 0)                      ; if none marked then
+          (dired-toggle-marks)                               ; mark all files
+          (setq marked-files (dired-get-marked-files)))      ; get marked file list
+        (message "Files marked for copy")                    ; info message
+        (dired-number-of-marked-files)                       ; marked files info
+        (kill-new "\n")                                      ; start with a newline
+        (dolist (marked-file marked-files)                   ; walk the marked files list
+          (when (org-file-image-p marked-file)               ; only on image files
+            (kill-append                                     ; append image to kill-ring
+             (concat "#+CAPTION: "                           ; as caption,
+                     (file-name-base marked-file)            ; use file-name-base
+                     "\n[[file:" marked-file "]]\n\n") nil))) ; link to marked-file
+        (when (= number-marked-files 0)                      ; if none were marked then
+          (dired-toggle-marks)))                             ; unmark all
+    (message "Error: Does not work outside dired-mode")      ; can't work not in dired-mode
+    (ding)))                                                 ; error sound
+#+end_src
+
+#+RESULTS:
+: my/dired-copy-images-links
+
+
+*** Yasssss
+****  Src-Header stuff
+#+begin_src emacs-lisp :tangle no
+(defun +yas/org-src-header-p ()
+  "Determine whether `point' is within a src-block header or header-args."
+  (pcase (org-element-type (org-element-context))
+    ('src-block (< (point) ; before code part of the src-block
+                   (save-excursion (goto-char (org-element-property :begin (org-element-context)))
+                                   (forward-line 1)
+                                   (point))))
+    ('inline-src-block (< (point) ; before code part of the inline-src-block
+                          (save-excursion (goto-char (org-element-property :begin (org-element-context)))
+                                          (search-forward "]{")
+                                          (point))))
+    ('keyword (string-match-p "^header-args" (org-element-property :value (org-element-context))))))
+
+#+end_src
+
+#+RESULTS:
+: +yas/org-src-header-p
+
+**** More Src-Header Stuff
+#+begin_src emacs-lisp :tangle no
+(defun +yas/org-prompt-header-arg (arg question values)
+  "Prompt the user to set ARG header property to one of VALUES with QUESTION.
+The default value is identified and indicated. If either default is selected,
+or no selection is made: nil is returned."
+  (let* ((src-block-p (not (looking-back "^#\\+property:[ \t]+header-args:.*" (line-beginning-position))))
+         (default
+          (or
+           (cdr (assoc arg
+                       (if src-block-p
+                           (nth 2 (org-babel-get-src-block-info t))
+                         (org-babel-merge-params
+                          org-babel-default-header-args
+                          (let ((lang-headers
+                                 (intern (concat "org-babel-default-header-args:"
+                                                 (+yas/org-src-lang)))))
+                            (when (boundp lang-headers) (eval lang-headers t)))))))
+           ""))
+         default-value)
+    (setq values (mapcar
+                  (lambda (value)
+                    (if (string-match-p (regexp-quote value) default)
+                        (setq default-value
+                              (concat value " "
+                                      (propertize "(default)" 'face 'font-lock-doc-face)))
+                      value))
+                  values))
+    (let ((selection (consult--read values :prompt question :default default-value)))
+      (unless (or (string-match-p "(default)$" selection)
+                  (string= "" selection))
+        selection))))
+#+end_src
+
+#+RESULTS:
+: +yas/org-prompt-header-arg
+
+*** HTML
+as of right now this is almost entirely stolen from tecosaur, as I learn frontend dev stuff and get better with html and css, I'll probably be able to do more with this on my own
+until then, thanks again for sharing your config publicly tecosaur
+#+begin_src emacs-lisp
+(defadvice! org-html-template-fancier (orig-fn contents info)
+  "Return complete document string after HTML conversion.
+CONTENTS is the transcoded contents string.  INFO is a plist
+holding export options. Adds a few extra things to the body
+compared to the default implementation."
+  :around #'org-html-template
+  (if (or (not org-fancy-html-export-mode) (bound-and-true-p org-msg-export-in-progress))
+      (funcall orig-fn contents info)
+    (concat
+     (when (and (not (org-html-html5-p info)) (org-html-xhtml-p info))
+       (let* ((xml-declaration (plist-get info :html-xml-declaration))
+              (decl (or (and (stringp xml-declaration) xml-declaration)
+                        (cdr (assoc (plist-get info :html-extension)
+                                    xml-declaration))
+                        (cdr (assoc "html" xml-declaration))
+                        "")))
+         (when (not (or (not decl) (string= "" decl)))
+           (format "%s\n"
+                   (format decl
+                           (or (and org-html-coding-system
+                                    (fboundp 'coding-system-get)
+                                    (coding-system-get org-html-coding-system 'mime-charset))
+                               "iso-8859-1"))))))
+     (org-html-doctype info)
+     "\n"
+     (concat "<html"
+             (cond ((org-html-xhtml-p info)
+                    (format
+                     " xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"%s\" xml:lang=\"%s\""
+                     (plist-get info :language) (plist-get info :language)))
+                   ((org-html-html5-p info)
+                    (format " lang=\"%s\"" (plist-get info :language))))
+             ">\n")
+     "<head>\n"
+     (org-html--build-meta-info info)
+     (org-html--build-head info)
+     (org-html--build-mathjax-config info)
+     "</head>\n"
+     "<body>\n<input type='checkbox' id='theme-switch'><div id='page'><label id='switch-label' for='theme-switch'></label>"
+     (let ((link-up (org-trim (plist-get info :html-link-up)))
+           (link-home (org-trim (plist-get info :html-link-home))))
+       (unless (and (string= link-up "") (string= link-home ""))
+         (format (plist-get info :html-home/up-format)
+                 (or link-up link-home)
+                 (or link-home link-up))))
+     ;; Preamble.
+     (org-html--build-pre/postamble 'preamble info)
+     ;; Document contents.
+     (let ((div (assq 'content (plist-get info :html-divs))))
+       (format "<%s id=\"%s\">\n" (nth 1 div) (nth 2 div)))
+     ;; Document title.
+     (when (plist-get info :with-title)
+       (let ((title (and (plist-get info :with-title)
+                         (plist-get info :title)))
+             (subtitle (plist-get info :subtitle))
+             (html5-fancy (org-html--html5-fancy-p info)))
+         (when title
+           (format
+            (if html5-fancy
+                "<header class=\"page-header\">%s\n<h1 class=\"title\">%s</h1>\n%s</header>"
+              "<h1 class=\"title\">%s%s</h1>\n")
+            (if (or (plist-get info :with-date)
+                    (plist-get info :with-author))
+                (concat "<div class=\"page-meta\">"
+                        (when (plist-get info :with-date)
+                          (org-export-data (plist-get info :date) info))
+                        (when (and (plist-get info :with-date) (plist-get info :with-author)) ", ")
+                        (when (plist-get info :with-author)
+                          (org-export-data (plist-get info :author) info))
+                        "</div>\n")
+              "")
+            (org-export-data title info)
+            (if subtitle
+                (format
+                 (if html5-fancy
+                     "<p class=\"subtitle\" role=\"doc-subtitle\">%s</p>\n"
+                   (concat "\n" (org-html-close-tag "br" nil info) "\n"
+                           "<span class=\"subtitle\">%s</span>\n"))
+                 (org-export-data subtitle info))
+              "")))))
+     contents
+     (format "</%s>\n" (nth 1 (assq 'content (plist-get info :html-divs))))
+     ;; Postamble.
+     (org-html--build-pre/postamble 'postamble info)
+     ;; Possibly use the Klipse library live code blocks.
+     (when (plist-get info :html-klipsify-src)
+       (concat "<script>" (plist-get info :html-klipse-selection-script)
+               "</script><script src=\""
+               org-html-klipse-js
+               "\"></script><link rel=\"stylesheet\" type=\"text/css\" href=\""
+               org-html-klipse-css "\"/>"))
+     ;; Closing document.
+     "</div>\n</body>\n</html>")))
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src emacs-lisp
+
+
+(defadvice! org-html-toc-linked (depth info &optional scope)
+  "Build a table of contents.
+
+Just like `org-html-toc', except the header is a link to \"#\".
+
+DEPTH is an integer specifying the depth of the table.  INFO is
+a plist used as a communication channel.  Optional argument SCOPE
+is an element defining the scope of the table.  Return the table
+of contents as a string, or nil if it is empty."
+  :override #'org-html-toc
+  (let ((toc-entries
+         (mapcar (lambda (headline)
+                   (cons (org-html--format-toc-headline headline info)
+                         (org-export-get-relative-level headline info)))
+                 (org-export-collect-headlines info depth scope))))
+    (when toc-entries
+      (let ((toc (concat "<div id=\"text-table-of-contents\">"
+                         (org-html--toc-text toc-entries)
+                         "</div>\n")))
+        (if scope toc
+          (let ((outer-tag (if (org-html--html5-fancy-p info)
+                               "nav"
+                             "div")))
+            (concat (format "<%s id=\"table-of-contents\">\n" outer-tag)
+                    (let ((top-level (plist-get info :html-toplevel-hlevel)))
+                      (format "<h%d><a href=\"#\" style=\"color:inherit; text-decoration: none;\">%s</a></h%d>\n"
+                              top-level
+                              (org-html--translate "Table of Contents" info)
+                              top-level))
+                    toc
+                    (format "</%s>\n" outer-tag))))))))
+
+#+end_src
+
+#+RESULTS:
+
+#+begin_src emacs-lisp
+
+
+(setq org-html-style-plain org-html-style-default
+      org-html-htmlize-output-type 'css
+      org-html-doctype "html5"
+     )
+#+end_src
+
+#+RESULTS:
+: html5

@@ -69,7 +69,6 @@
 (package! dired-open)
 (package! dired-subtree)
 (package! dirvish)
-(package! dmenu)
 (package! ednc)
 (package! emojify)
 (package! ivy-posframe)
@@ -77,7 +76,6 @@
 (package! mw-thesaurus)
 (package! ox-gemini)
 (package! peep-dired)
-(package! password-store)
 (package! highlight-symbol)
 (package! resize-window)
 (package! tldr)
@@ -98,7 +96,6 @@
 (package! ivy-bibtex)
 (package! jinx)
 (package! keycast)
-(package! elcord)
 (package! gruvbox-theme)
 (package! vlf)
 (package! calctex :recipe (:host github :repo "johnbcoughlin/calctex"
@@ -136,7 +133,6 @@
   :recipe (:host github :repo "emacsmirror/org-contrib"
            :files ("lisp/*.el"))
   :pin "351c71397d893d896a47ad7e280607b4d59b84e4")
-;; Org Stuff
 (package! org-roam-ui)
 (package! org-fragtog)
 (package! org-auto-tangle)
@@ -148,12 +144,8 @@
 (package! org-appear)
 (package! graphviz-dot-mode :pin "8ff793b13707cb511875f56e167ff7f980a31136")
 (package! dimmer)
-;;(package! org-ol-tree)
 (package! org-ol-tree :recipe (:host github :repo "Townk/org-ol-tree")
   :pin "207c748aa5fea8626be619e8c55bdb1c16118c25")
-;;(package! org-chef)
-;;(package! org-graph-view)
-;;
 (package! aas :recipe (:host github :repo "ymarco/auto-activating-snippets")
   :pin "ddc2b7a58a2234477006af348b30e970f73bc2c1")
 (package! info-colors :pin "2e237c301ba62f0e0286a27c1abe48c4c8441143")
@@ -166,10 +158,32 @@
 
 (package! ox-chameleon
   :recipe (:host github :repo "tecosaur/ox-chameleon"))
+(package! org-tree-slide
+  :recipe (:host github :repo "takaxp/org-tree-slide"))
+
+(package! wakatime-mode)
+
+(package! ox-ioslide)
 
 
+(package! org-cliplink
+  :pin "13e0940")
+;; The :pin is optional. It references a commit so the version doesn’t drift.
 
-;; Webdev!
+
+(package! copilot
+  :recipe (:host github :repo "copilot-emacs/copilot.el" :files ("*.el")))
+
+(package! md-roam
+  :recipe (:host github :repo "nobiot/md-roam"))
+
+(package! org-similarity :recipe (:host github :repo "brunoarine/org-similarity"
+   :branch "main"))
+
+(package! org-roam-timestamps)
+
+(package! copilot-chat)
+
 
 
 (provide 'packages)
