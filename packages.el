@@ -178,11 +178,20 @@
   :recipe (:host github :repo "nobiot/md-roam"))
 
 (package! org-similarity :recipe (:host github :repo "brunoarine/org-similarity"
-   :branch "main"))
+                                  :branch "main"))
 
 (package! org-roam-timestamps)
 
 (package! copilot-chat)
+(package! modus-themes)
+(package! zetteldesk
+  :recipe (:host github :repo "Vidianos-Giannitsis/zetteldesk.el" :files ("*.el")))
+(package! org-ql)
+(package! helm-org-ql)
+;; (package! org-roam-tags)
+(package! org-supertag :recipe (:host github :repo "yibie/org-supertag"))
+(package! llama)
+
 
 
 

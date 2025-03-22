@@ -1,11 +1,9 @@
-;; (setq debug-on-error t)
-;; (setq debug-on-interrupt t)
-;; (setq debug-init t)
-
 (add-hook 'doom-first-frame-hook
           (lambda ()
             (unless (daemonp) ; Check if Emacs is already a daemon (server)
               (server-start)))) ; Start the Emacs server if not already running
+(custom-set-variables
+ '(display-battery-mode 1))
 
 ;; -*- lexical-binding: t -*-
 ;; Whenever you reconfigure a package, make sure to wrap your config in an
@@ -46,51 +44,32 @@
        user-mail-address "ltwirth@asu.edu")
 
 
-;; If you use `org' and don't want your org files in the default location below,
-;; change `org-directory'. It must be set before org loads!
 ;; (setq org-directory "~/org/")
 (setq org-directory (file-truename "~/org/")) ;; File truename allows for symbolic link resolution
-(setq org-roam-directory (file-truename "~/org/roam/"))
-(md-roam-mode 1)
-(setq md-roam-file-extension "md")
+(setq org-roam-directory (file-truename "~/org/roam/")) ; I like roaming
 ;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
-;; I thought to myself "why not try to combine the two?"
-(setq org-agenda-files '("~/org/roam/daily/" "~/org/"))
+;; I thought to myself "why not try to combine the two?" (this isn't working, but daily notes are working for me)
+(setq org-agenda-files '("~/org/roam/daily" "~/.config/doom/" "~/org/roam/agenda" ))
 
 (setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
       evil-want-fine-undo t                       ; By default while in insert all changes are one big blob. Be more granular
-      auto-save-default t                         ; Nobody likes to loose work, I certainly don't
-      truncate-string-ellipsis "…"                ; Unicode ellispis are nicer than "...", and also save /precious/ space
-      password-cache-expiry nil                   ; I can trust my computers ... can't I?
+      auto-save-default t                         ; Nobody likes to lose work, I certainly don't, but vim mode makes me :w on every <esc> so it's not too bad
+      truncate-string-ellipsis "…"
+      password-cache-expiry nil
       scroll-preserve-screen-position 'always     ; Don't have `point' jump around
       scroll-margin 2                             ; It's nice to maintain a little margin
       display-time-default-load-average nil       ; I don't think I've ever found this useful
       display-line-numbers-type 'relative         ; RelNum ON TOP
+      evil-vsplit-window-right t
+      evil-split-window-below t
       )
-
 
 (display-time-mode 1)                             ; Enable time in the mode-line
 (global-subword-mode 1)                           ; Iterate through CamelCase words
+(blink-cursor-mode -1)
+(column-number-mode t)
+(transient-mark-mode t)
 (pixel-scroll-precision-mode t)                   ; Turn on pixel scrolling
-
-
-
-(setq-default
- delete-by-moving-to-trash t                      ; Delete files to trash
- window-combination-resize t                      ; take new window space from all other windows (not just current)
- x-stretch-cursor t                               ; Stretch cursor to the glyph width
- show-paren-mode 1                                ; Highlight Matching Parenthesis
- abbrev-mode t                                    ; erm..
-)
-
-(add-to-list 'default-frame-alist '(width . 92))
-(add-to-list 'default-frame-alist '(height . 40))
-
-(setq evil-vsplit-window-right t
-      evil-split-window-below t
-      ;; evil-split-window-left f
-      ;; evil-split-window-above f
-        )
 
 (setq-default custom-file (expand-file-name ".custom.el" doom-private-dir))
 (when (file-exists-p custom-file)
@@ -109,8 +88,6 @@
       "C-<up>"         #'+evil/window-move-up
       "C-<right>"      #'+evil/window-move-right)
 
-(setq evil-vsplit-window-right t
-      evil-split-window-below t)
 (defadvice! prompt-for-buffer (&rest _)
   :after '(evil-window-split evil-window-vsplit)
   (consult-buffer))
@@ -139,20 +116,14 @@
 ;; Your font must have an italic face available.
 (set-face-attribute 'font-lock-comment-face nil
                     :slant 'italic)
-;;(set-face-attribute 'font-lock-keyword-face nil
-;; :slant 'italic)
-(set-face-attribute 'doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
-(set-face-attribute 'doom-symbol-font (font-spec :family "JuliaMono"))
+(setq doom-symbol-font (font-spec :family "JuliaMono" :size 22 :weight 'light))
+(setq doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
 (add-to-list 'default-frame-alist '(font . "JetBrains Mono-18"))
 
 (setq-default line-spacing 0.05)
 
 (setq doom-theme 'doom-gruvbox
       doom-themes-treemacs-enable-variable-pitch nil)
-
-(blink-cursor-mode -1)
-(column-number-mode t)
-(transient-mark-mode t)
 
 (after! doom-modeline
   (setq doom-modeline-enable-word-count t)
@@ -197,25 +168,14 @@
    ))
 (setq which-key-allow-multiple-replacements t)
 
-(map! :leader
-      (:prefix ("e" . "explorer")
-       :desc "Toggle Treemacs" "t" #'treemacs))
-
-(use-package! md-roam
-  :load-path "packages/md-roam" ; Assuming you install md-roam in ~/.doom.d/packages/md-roam/ (adjust if needed)
-  :config
-  (md-roam-mode 1)
-  (setq md-roam-file-extension "md")) ; Optional, defaults to "md"
-
-(after! org-roam
-  (add-to-list 'org-roam-capture-templates
-               '("m" "Markdown" plain ""
-                 :target (file+head "%<%Y-%m-%dT%H%M%S>.md"
-                                   "---\ntitle: ${title}\nid: %<%Y-%m-%dT%H%M%S>\ncategory: \n---\n")
-                 :unnarrowed t)))
-
-(defun my/generate-roam-id ()
-  (format-time-string "%Y%m%d%H%M%S"))
+;; accept completion from copilot and fallback to company
+(use-package! copilot
+  :hook (prog-mode . copilot-mode)
+  :bind (:map copilot-completion-map
+              ("<tab>" . 'copilot-accept-completion)
+              ("TAB" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word)
+              ("C-<tab>" . 'copilot-accept-completion-by-word))):w
 
 ;; Custom todo states
 (setq org-todo-keywords
@@ -261,9 +221,9 @@
  :config
 (setq org-special-ctrl-a/e t)
 (setq org-insert-heading-respect-content t)
-  ;; appearance
+  ;; ------------------------------------- appearance ----------------------------------------------
   (setq org-modern-radio-target    '("❰" t "❱"))
-  (setq org-modern-internal-target '("↪ " t "")) ; TODO: make this not be an emoji, and instead a font lig
+  (setq org-modern-internal-target '("↪ " t ""))
   (setq org-modern-todo t)
   (setq org-modern-todo-faces
   '(("TODO" :inverse-video t :inherit org-todo)
@@ -320,6 +280,10 @@
 )
 
 (after! org (add-hook 'org-mode-hook #'org-modern-mode))
+
+(custom-set-faces
+ '(org-modern-block-name ((t (:inherit org-block-begin-line))))
+ '(org-modern-block-border ((t (:inherit org-block-end-line)))))
 
 (after! org-mode
   (custom-set-faces!
@@ -452,166 +416,6 @@
 (after! org (plist-put org-format-latex-options :scale 3.0))
 
 (after! org
-  (setq org-roam-directory  "~/org/roam/")
-  (setq org-modern-mode t)
-  (setq org-roam-directory (file-truename "~/org/roam/"))
-  (setq org-roam-completion-everywhere t)
-  (setq org-roam-file-extensions '("org" "md"))
-  (require 'md-roam)
-  (md-roam-mode 1)
-  (org-roam-db-autosync-mode 1)
-)
-
-(use-package! org-similarity
- :after org  ; Ensure it loads after org-mode
- :commands (org-similarity-insert-list
-            org-similarity-sidebuffer
-            org-similarity-query) ; Autoload commands
- :config
- (setq org-similarity-directory org-roam-directory) ; Or org-directory if not using org-roam
-(setq org-similarity-file-extension-pattern "*.org\\|*.md") ;; Can look at markdown >:)
- (setq org-similarity-language "english") ; Or your preferred language
- (setq org-similarity-algorithm "tfidf") ; Or "bm25"
- (setq org-similarity-number-of-documents 10) ; Adjust as desired
- (setq org-similarity-min-chars 0) ; Adjust if needed
- (setq org-similarity-show-scores t) ; Set to t to see similarity scores initially
- (setq org-similarity-threshold 0.05) ; Adjust if needed
- (setq org-similarity-use-id-links t) ; Recommended for org-roam v2
- (setq org-similarity-recursive-search nil) ; Or t for recursive search
- (setq org-similarity-custom-python-interpreter nil) ; Let it manage venv
- (setq org-similarity-remove-first nil)
- (setq org-similarity-heading "** Related notes") ; Customize heading if you like
- (setq org-similarity-prefix "- ") ; Customize prefix if you like
- (setq org-similarity-ignore-frontmatter nil) ; Or t to ignore frontmatter
- )
-
-(use-package! org-roam-timestamps
-  :after org-roam
-  :config (org-roam-timestamps-mode))
-	(after! org-roam
-	(setq org-roam-timestamps-parent-file t)
-	(setq org-roam-timestamps-remember-timestamps t))
-
-(after! org
-(add-to-list 'org-roam-capture-templates
-           '(("w" "Web Capture" plain
-              "* [[%:link][%:title]] :web: :[[file:tags.org::*KEYWORDS][KEYWORDS]]\n  Captured on: %U\n  Source: %:link\n  \n  %input"
-              :unnarrowed t :jump-to-captured t))))
-
-(setq org-roam-capture-ref-templates
-  '(("r" "ref" plain "* %U\n
-%(zp/org-protocol-insert-selection-dwim \"%i\")%?"
-     :target (file+head "web/${slug}.org"
-                        "#+title: ${title}\n
-#+roam_key: ${ref}\n
-#+created: %u\n"  ;; <-- COMMA HERE
-                        )
-     :unnarrowed t)))
-
-(defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
-  :around #'doom-modeline-buffer-file-name ; takes no args
-  (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-      (replace-regexp-in-string
-       "\\(?:^\\|.*/\\)\\([0-9]\\{4\\}\\)\\([0-9]\\{2\\}\\)\\([0-9]\\{2\\}\\)[0-9]*-"
-       "🢔(\\1-\\2-\\3) "
-       (subst-char-in-string ?_ ?  buffer-file-name))
-    (funcall orig-fun)))
-
-(defvar +org-plot-term-size '(1050 . 650)
-  "The size of the GNUPlot terminal, in the form (WIDTH . HEIGHT).")
-
-(after! org-plot
-  (defun +org-plot-generate-theme (_type)
-    "Use the current Doom theme colours to generate a GnuPlot preamble."
-    (format "
-fgt = \"textcolor rgb '%s'\" # foreground text
-fgat = \"textcolor rgb '%s'\" # foreground alt text
-fgl = \"linecolor rgb '%s'\" # foreground line
-fgal = \"linecolor rgb '%s'\" # foreground alt line
-
-# foreground colors
-set border lc rgb '%s'
-# change text colors of  tics
-set xtics @fgt
-set ytics @fgt
-# change text colors of labels
-set title @fgt
-set xlabel @fgt
-set ylabel @fgt
-# change a text color of key
-set key @fgt
-
-# line styles
-set linetype 1 lw 2 lc rgb '%s' # red
-set linetype 2 lw 2 lc rgb '%s' # blue
-set linetype 3 lw 2 lc rgb '%s' # green
-set linetype 4 lw 2 lc rgb '%s' # magenta
-set linetype 5 lw 2 lc rgb '%s' # orange
-set linetype 6 lw 2 lc rgb '%s' # yellow
-set linetype 7 lw 2 lc rgb '%s' # teal
-set linetype 8 lw 2 lc rgb '%s' # violet
-
-# border styles
-set tics out nomirror
-set border 3
-
-# palette
-set palette maxcolors 8
-set palette defined ( 0 '%s',\
-1 '%s',\
-2 '%s',\
-3 '%s',\
-4 '%s',\
-5 '%s',\
-6 '%s',\
-7 '%s' )
-"
-            (doom-color 'fg)
-            (doom-color 'fg-alt)
-            (doom-color 'fg)
-            (doom-color 'fg-alt)
-            (doom-color 'fg)
-            ;; colours
-            (doom-color 'red)
-            (doom-color 'blue)
-            (doom-color 'green)
-            (doom-color 'magenta)
-            (doom-color 'orange)
-            (doom-color 'yellow)
-            (doom-color 'teal)
-            (doom-color 'violet)
-            ;; duplicated
-            (doom-color 'red)
-            (doom-color 'blue)
-            (doom-color 'green)
-            (doom-color 'magenta)
-            (doom-color 'orange)
-            (doom-color 'yellow)
-            (doom-color 'teal)
-            (doom-color 'violet)))
-
-  (defun +org-plot-gnuplot-term-properties (_type)
-    (format "background rgb '%s' size %s,%s"
-            (doom-color 'bg) (car +org-plot-term-size) (cdr +org-plot-term-size)))
-
-  (setq org-plot/gnuplot-script-preamble #'+org-plot-generate-theme)
-  (setq org-plot/gnuplot-term-extra #'+org-plot-gnuplot-term-properties))
-
-(use-package! org-media-note
-  :hook (org-mode .  org-media-note-mode)
-  :bind (
-         ("H-v" . org-media-note-show-interface))  ;; Main entrance
-  :config
-  (setq org-media-note-screenshot-image-dir "~/Notes/imgs/")  ;; Folder to save screenshot
-  )
-
-(after! org-cliplink
-(map! :leader
-      :desc "Org Cliplink"
-      "n l" #'org-cliplink)
-)
-
-(after! org
  (setq org-export-backends '(ascii beamer html icalendar latex man md odt))
  )
 
@@ -741,6 +545,123 @@ set palette defined ( 0 '%s',\
 (add-to-list 'org-export-filter-item-functions
              '+org-export-latex-fancy-item-checkboxes)
 
+(use-package! pdf-tools
+  :magic ("%PDF" . pdf-view-mode)
+  :config
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-page))
+
+(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
+
+(after! org
+  ;; (setq org-roam-directory  "~/org/roam/")
+  (setq org-modern-mode t)
+  (setq org-roam-directory (file-truename "~/org/roam/"))
+  (setq org-roam-completion-everywhere t)
+  (setq org-roam-file-extensions '("org"))
+)
+
+(setq org-roam-mode-sections
+      (list #'org-roam-backlinks-section
+            #'org-roam-reflinks-section
+            #'org-roam-unlinked-references-section
+
+        ))
+
+(defun my/org-roam-toggle-unlinked-references ()
+        "Enable unlinked references in org-roam."
+        ;; need to update the org-roam-mode-sections list, if it contains "org-roam-unlinked-references-section" remove it, if not, add it
+        (if (member 'org-roam-unlinked-references-section org-roam-mode-sections)
+            (setq org-roam-mode-sections (remove 'org-roam-unlinked-references-section org-roam-mode-sections))
+          (add-to-list 'org-roam-mode-sections 'org-roam-unlinked-references-section))
+)
+
+(defun org-roam-repair-broken-links ()
+  "For all broken links referencing current note,
+   repair incoming links"
+  (interactive)
+
+  ;; we first determine if there exists any such broken references
+  (when-let* ((title (org-get-title))
+	      (query "select links.dest,
+                             links.source, links.pos
+
+                      from links where links.dest like $s1")
+	      (links (org-roam-db-query query (concat "%" title "%"))))
+
+    ;; for all such - go to those buffers and let org-roam's
+    ;; [[roam:*]] replace protocol take over - it would do this on save
+    ;; automatically
+  (save-excursion
+    (mapc (lambda (link)
+	    (let ((id (nth 1 link)))
+	      (+org-roam-id-goto id)
+	      (set-buffer-modified-p t)
+	      (save-buffer)))
+	  links))))
+
+(defun +org-roam-id-goto (id)
+  "Switch to the buffer containing the entry with id ID.
+Move the cursor to that entry in that buffer.
+Like `org-id-goto', but additionally uses the Org-roam database"
+  (interactive "sID: ")
+  (let ((m (org-roam-id-find id 'marker)))
+    (unless m
+      (error "Cannot find entry with ID \"%s\"" id))
+    (pop-to-buffer-same-window (marker-buffer m))
+    (goto-char m)
+    (move-marker m nil)
+    (org-fold-show-context)))
+
+(org-link-set-parameters "roam" :face '(:foreground "red"))
+(org-link-set-parameters "file" :face '(:foreground "blue"))
+(org-link-set-parameters "https" :face '(:foreground "green"))
+
+(use-package! org-similarity
+ :after org  ; Ensure it loads after org-mode
+ :commands (org-similarity-insert-list
+            org-similarity-sidebuffer
+            org-similarity-query) ; Autoload commands
+ :config
+ (setq org-similarity-directory org-roam-directory) ; Or org-directory if not using org-roam
+(setq org-similarity-file-extension-pattern "*.org\\|*.md") ;; Can look at markdown >:)
+ (setq org-similarity-language "english") ; Or your preferred language
+ (setq org-similarity-algorithm "tfidf") ; Or "bm25"
+ (setq org-similarity-number-of-documents 10) ; Adjust as desired
+ (setq org-similarity-min-chars 0) ; Adjust if needed
+ (setq org-similarity-show-scores t) ; Set to t to see similarity scores initially
+ (setq org-similarity-threshold 0.05) ; Adjust if needed
+ (setq org-similarity-use-id-links t) ; Recommended for org-roam v2
+ (setq org-similarity-recursive-search nil) ; Or t for recursive search
+ (setq org-similarity-custom-python-interpreter nil) ; Let it manage venv
+ (setq org-similarity-remove-first nil)
+ (setq org-similarity-heading "** Related notes") ; Customize heading if you like
+ (setq org-similarity-prefix "- ") ; Customize prefix if you like
+ (setq org-similarity-ignore-frontmatter nil) ; Or t to ignore frontmatter
+ )
+
+(use-package! org-roam-timestamps
+  :after org-roam
+  :config (org-roam-timestamps-mode))
+	(after! org-roam
+	(setq org-roam-timestamps-parent-file t)
+	(setq org-roam-timestamps-remember-timestamps t))
+
+(defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
+  :around #'doom-modeline-buffer-file-name ; takes no args
+  (if (s-contains-p org-roam-directory (or buffer-file-name ""))
+      (replace-regexp-in-string
+       "\\(?:^\\|.*/\\)\\([0-9]\\{4\\}\\)\\([0-9]\\{2\\}\\)\\([0-9]\\{2\\}\\)[0-9]*-"
+       "🢔(\\1-\\2-\\3) "
+       (subst-char-in-string ?_ ?  buffer-file-name))
+    (funcall orig-fun)))
+
+(after! org-cliplink
+(map! :leader
+      :desc "Org Cliplink"
+      "n l" #'org-cliplink)
+)
+
 (after! org-roam-dailies
 (setq org-roam-dailies-capture-templates
       (let ((head
@@ -774,7 +695,6 @@ set palette defined ( 0 '%s',\
 ;; Set up org-agenda-files to include Org Roam dailies directory
 (setq org-agenda-files (append org-agenda-files (list "~/org/roam/daily")))
 
-; preface, I stole this straight from the internet, so I dunno even if this will work, and only have a loose Idea as to how it should work
 (defun my/org-roam-today-mk-agenda-link ()
   (interactive)
   (let* ((marker (or (org-get-at-bol 'org-marker)
@@ -802,240 +722,206 @@ set palette defined ( 0 '%s',\
         (replace-match "- " nil nil))
       (buffer-string))))
 
-;; Customize the default Org agenda command to include Org Roam daily files
 (setq org-agenda-custom-commands
       '(("d" "Org Roam Daily Files"
          ((agenda "" ((org-agenda-files (list "~/org/roam/daily"))))
           (function my/org-roam-today-mk-agenda-link)
           (function my/get-daily-agenda)))))
 
-;; Add daily files to the default agenda files list
 (setq org-agenda-files (append org-agenda-files
                                (list "~/org/roam/daily")))
 
-(use-package! pdf-tools
-  :magic ("%PDF" . pdf-view-mode)
+(use-package! org-supertag
+  :after org
   :config
-  (pdf-tools-install)
-  (setq-default pdf-view-display-size 'fit-page))
+  (require 'org-supertag)
+  (map! :leader
+        :prefix "o"
+        "s t" #'org-supertag-list-tags
+        "s r" #'org-supertag-show-tag-relations
+        "s p" #'org-supertag-list-tag-properties
+        "s c" #'org-supertag-compare-tags))
+(setq org-supertag-directory "~/org/roam")
 
-(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
-
-(use-package! org-noter
-  :defer t
-  :commands (org-noter)
-  ;; Make sure it loads after org and pdf-view are available:
-  :after (org pdf-view)
-  :config
-  ;; Where to store the notes (Org) files if :NOTER_DOCUMENT: is missing:
-  (setq org-noter-notes-search-path '("~/org/roam/" "~/org/notes/"))
-
-  ;; By default, new notes buffer spawns below the PDF; change if you want:
-  (setq org-noter-notes-window-location 'right
-        org-noter-doc-split-fraction '(0.5 . 0.5)
-        org-noter-auto-save-last-location t)
-
-  ;; You can also unify it with org-roam, if desired:
-  (org-noter-enable-org-roam-integration)
-
-  (map! :map org-noter-doc-mode-map
-		:desc "Insert Note"
-		:n (kbd "C-i") #'org-noter-insert-note)
-	(map! :map org-noter-doc-mode-map
-		:n "M-i" #'org-noter-insert-precise-note
-		:desc "Insert Precise Note")
+(after! org-roam
+        (map! :leader
+                (:prefix ("n r" . "org-roam")
+                :desc "Org Extract Subtree" "x" #'org-roam-extract-subtree))
+        (map! :leader
+                (:prefix ("mm" . "org-roam")
+                :desc "Org Extract Subtree" "x" #'org-roam-extract-subtree))
 )
 
-(defun my/org-roam-filter-by-tag (tag-name)
-  (lambda (node)
-    (member tag-name (org-roam-node-tags node))))
-
-(defun my/org-roam-list-notes-by-tag (tag-name)
-  (mapcar #'org-roam-node-file
-          (seq-filter
-           (my/org-roam-filter-by-tag tag-name)
-           (org-roam-node-list))))
-
-(defun my/org-roam-refresh-agenda-list ()
+(defun my/roamutils/find-notes-with-file-links ()
+  "Find Org-roam notes containing 'file:' links to '.org' files, excluding the 'daily' directory."
   (interactive)
-  (setq org-agenda-files (my/org-roam-list-notes-by-tag "Project")))
+  (let* ((org-roam-directory (expand-file-name "~/org/roam")) ; Adjust this path as needed
+         (files (directory-files-recursively org-roam-directory "\\.org$"))
+         (filtered-files (seq-filter
+                          (lambda (file)
+                            (message "Checking file: %s" file) ; Print each file being checked
+                            (and (not (string-match-p "/daily/" file))
+                                 (with-temp-buffer
+                                   (insert-file-contents file)
+                                   (goto-char (point-min))
+                                   (re-search-forward "\\[\\[file:" nil t))))
+                          files)))
+    (if filtered-files
+        (let ((selected-file (completing-read "Select a note: " filtered-files nil t)))
+          (find-file selected-file))
+      (message "No notes with 'file:' links to '.org' files found."))))
 
-;; Build the agenda list the first time for the session
-(my/org-roam-refresh-agenda-list)
+(defun my/roamutils/replace-roam-links-with-id-in-buffer ()
+  "Replace all roam: links in the current buffer with id: links if the target exists.
+Skips links with no matching node."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((modified nil))
+      ;; Search for [[roam:Some Title]]
+      (while (re-search-forward "\\[\\[roam:\\([^]]+\\)\\]\\(\\[.*?\\]\\)?\\]" nil t)
+        (let* ((title (match-string 1))
+               ;; Look up the node in org-roam by title or alias
+               (node (org-roam-node-from-title-or-alias title)))
+          (if node
+              (let* ((id (org-roam-node-id node))
+                     ;; If there was a description (optional link text), preserve it
+                     (description (or (match-string 2)
+                                      (concat "[" (org-roam-node-title node) "]"))))
+                ;; Replace the whole match with the id link
+                (replace-match (format "[[id:%s]]%s" id description))
+                (setq modified t))
+            (message "Skipping: No node found for title '%s'" title))))
+      modified)))
 
-(after! org
-(defun my/org-roam-create-daily-file-if-needed ()
-  "Create the daily file with the specified template if it doesn't exist."
-  (let* ((date-string (format-time-string "%Y-%m-%d"))
-         (file-name (concat date-string ".org"))
-         (file-path (expand-file-name file-name "~/org/roam/daily"))
-         (file-exists (file-exists-p file-path))
-         (template
-             (concat "#+title: %<%Y-%m-%d (%a)>\n"
-                           "#+startup: showall\n"
-                           "#+Filetags: :dailies:\n* daily overview\n"
-                           "#+export_file_name: ~/org/exported/dalies/"
-                           "\n#+begin_src emacs-lisp :results value raw\n"
-                           "(my/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
-                           "#+end_src\n"
-                           "#+ Last Daily Entry: "
-                           "\n*  [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
-        (unless file-exists
-      (with-temp-buffer
-        (insert template)
-        (write-file file-path)))
-    file-path)))
+(defun my/roamutils/batch-replace-roam-links-in-all-files ()
+  "Process all org-roam files, replacing roam: links with id: links where possible.
+Asks for confirmation before starting, since it may take time."
+  (interactive)
+  (when (yes-or-no-p "This will scan and modify all Org-roam files. Continue? ")
+    (let ((files (org-roam-list-files))
+          (total-files 0)
+          (modified-files 0))
+      (message "Starting batch replace of roam: links with id: links...")
+      (dolist (file files)
+        (setq total-files (1+ total-files))
+        (with-current-buffer (find-file-noselect file)
+          (message "Processing file: %s" file)
+          (when (my/roamutils/replace-roam-links-with-id-in-buffer)
+            (message "Modified and saved: %s" file)
+            (setq modified-files (1+ modified-files))
+            (save-buffer))))
+      (message "Finished processing %d files. Modified %d files."
+               total-files modified-files))))
 
-(after! org
-  (defun my/org-roam-copy-heading-to-today ()
-    "Copy the heading of a completed TODO to today's daily file with state-specific formatting."
-    (interactive)
-    (let* ((today-file (my/org-roam-create-daily-file-if-needed))
-           (original-file (buffer-file-name))
-           (heading (save-excursion
-                     (org-back-to-heading t)
-                     (org-get-heading t t t t)))
-           (org-roam-id (org-roam-id-at-point))
-           (link-to-original (if org-roam-id
-                                (org-link-make-string (concat "id:" org-roam-id) heading)
-                              (org-link-make-string (concat "file:" (expand-file-name original-file) "::" heading) heading)))
-           (current-state (org-get-todo-state))
-           (status-prefix
-            (cond
-             ((string= current-state "DONE") "✓ DONE")
-             ((string= current-state "KILL") "✗ KILLED")
-             ((string= current-state "WAIT") "⏳ WAITING")
-             ((string= current-state "HOLD") "⏸️ HOLD")
-             ((string= current-state "PROJ") "📌 PROJECT")
-             ((string= current-state "LOOP") "🔄 LOOP")
-             ((string= current-state "STRT") "▶️ STARTED")
-             ((string= current-state "IDEA") "💡 IDEA")
-             ((string= current-state "OKAY") "👍 OKAY")
-             ((string= current-state "YES")  "✅ YES")
-             ((string= current-state "NO")   "❌ NO")
-             ((string= current-state "TODO") "📝 TODO")
-             (t current-state)))
-           (section-name
-            (cond
-             ((string= current-state "DONE") "* [/] Completed Tasks")
-             ((string= current-state "KILL") "* [/] Killed Tasks")
-             ((member current-state '("WAIT" "HOLD")) "* [/] Waiting/Held Tasks")
-             ((member current-state '("YES" "OKAY")) "* [/] Approved Tasks")
-             ((member current-state '("NO")) "* [/] Rejected Tasks")
-             (t "* [/] State Changes")))
-           (entry (format "** %s %s [%s]"
-                         status-prefix
-                         link-to-original
-                         (format-time-string "%Y-%m-%d %a %H:%M")))
-           (already-added nil))
-      ;; Check if the heading is already in the daily file
-      (with-current-buffer (find-file-noselect today-file)
-        (goto-char (point-min))
-        (while (re-search-forward (format "^** [^*]+ %s" (regexp-quote heading)) nil t)
-          (setq already-added t)))
-      ;; Only append if the heading is not already in the file
-      (unless already-added
-        (with-current-buffer (find-file-noselect today-file)
+(defun my/roamutils/org-roam-create-and-link-stub ()
+  "Prompt for a title, create a stub note, and insert a link to it at point."
+  (interactive)
+  (let ((org-roam-capture-templates
+         '(("s" "stub" plain "%?"
+            :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n#+filetags: :stub:\n\n:PROPERTIES:\n:STATUS: stub\n:END:\n\n")
+            :immediate-finish t
+            :unnarrowed t))))
+
+    ;; Run the node insert command with our stub template
+    (org-roam-node-insert)))
+
+;; Bind it to a key
+(global-set-key (kbd "C-c n l") #'my/roamutils/org-roam-create-and-link-stub)
+
+;; Define the stub link face
+(defface my/org-link-stub-face
+  '((t (:inherit org-link :foreground "gray" :underline t)))
+  "Face for links to stub notes.")
+
+;; Function that determines the face for ID links
+(defun my/org-link-id-face (link)
+  "Return face for ID link based on whether it points to a stub."
+  (let* ((id (org-element-property :path link))
+         (node (org-roam-node-from-id id)))
+    (if (and node (member "stub" (org-roam-node-tags node)))
+        'my/org-link-stub-face
+      'org-link)))
+
+;; Apply our custom face function to id links
+(org-link-set-parameters "id" :face 'my/org-link-id-face)
+
+;; Force refresh the display to apply changes
+(defun my/refresh-stub-link-display ()
+  "Refresh the display of links to apply stub formatting."
+  (when (derived-mode-p 'org-mode)
+    (font-lock-flush)))
+
+;; Run this when loading files or creating links
+(add-hook 'org-mode-hook 'my/refresh-stub-link-display)
+(advice-add 'org-roam-node-insert :after 'my/refresh-stub-link-display)
+
+(defun my/roamutils/org-roam-toggle-stub-status ()
+  "Toggle whether the current org-roam node is a stub."
+  (interactive)
+  (unless (org-roam-buffer-p)
+    (user-error "Not in an Org-roam file"))
+
+  (let* ((node (org-roam-node-at-point))
+         (tags (org-roam-node-tags node))
+         (is-stub (member "stub" tags)))
+
+    ;; Toggle filetags
+    (save-excursion
+      (goto-char (point-min))
+      (if (re-search-forward "^#\\+filetags:\\(.*\\)$" nil t)
+          (let* ((file-tags (match-string 1))
+                 (updated-tags (if is-stub
+                                   ;; Remove stub tag
+                                   (replace-regexp-in-string ":stub:" "" file-tags)
+                                 ;; Add stub tag
+                                 (if (string-match-p ":" file-tags)
+                                     (concat file-tags ":stub:")
+                                   (concat file-tags " :stub:")))))
+            (replace-match (concat "#+filetags:" updated-tags) t t))
+        ;; No filetags found, add them
+        (unless is-stub
           (goto-char (point-min))
-          ;; Ensure section heading exists
-          (unless (re-search-forward (regexp-quote section-name) nil t)
-            (goto-char (point-max))
-            (insert "\n" section-name))
-          (re-search-forward (regexp-quote section-name) nil t)
-          (outline-end-of-subtree)
-          (insert "\n" entry)
-          (save-buffer)))
-      (org-roam-db-sync)))
+          (forward-line)
+          (insert "#+filetags: :stub:\n"))))
 
-  (defun my/org-roam-handle-todo ()
-    "Handle TODO items by copying their heading to today's daily file when their state changes."
-    (interactive)
-    (let ((current-state (org-get-todo-state)))
-      (when (member current-state
-                    '("DONE" "KILL" "WAIT" "HOLD" "YES" "NO" "OKAY"))
-        (my/org-roam-copy-heading-to-today))))
-  (add-hook 'org-after-todo-state-change-hook #'my/org-roam-handle-todo))
+    ;; Toggle property status
+    (save-excursion
+      (goto-char (point-min))
+      (let ((found-prop nil))
+        ;; First check if properties drawer exists
+        (when (re-search-forward ":PROPERTIES:" nil t)
+          (let ((drawer-end (save-excursion
+                             (re-search-forward ":END:" nil t))))
+            (when drawer-end
+              ;; Check if STATUS property exists
+              (when (re-search-forward "^:STATUS:.*$" drawer-end t)
+                (setq found-prop t)
+                (replace-match (concat ":STATUS: " (if is-stub "" "stub")) t t))))
+          ;; If STATUS not found but drawer exists, add it
+          (unless found-prop
+            (unless is-stub  ; Only add if making it a stub
+              (end-of-line)
+              (insert "\n:STATUS: stub"))))
 
-(defun my/org-roam-add-obsidian-compatibility ()
-  "Update each Org-roam note with Obsidian-compatible properties for links and tags."
-  (interactive)
-  ;; Ensure Org-roam is loaded, and its DB is up-to-date.
-  (require 'org-roam)
-  (org-roam-db-sync)
+        ;; If no properties drawer found and making it a stub, add it
+        (unless (or found-prop is-stub)
+          (goto-char (point-min))
+          (forward-line 2) ; After title and filetags
+          (insert ":PROPERTIES:\n:STATUS: stub\n:END:\n\n"))))
 
-  (message "Starting Org-roam to Obsidian compatibility updates...")
+    ;; Force buffer save and database update
+    (save-buffer)
+    (org-roam-db-sync)
 
-  ;; Grab a list of all nodes using org-roam-node-list
-  (let ((nodes (org-roam-node-list)))
-    (dolist (node nodes)
-      (let* ((org-file (org-roam-node-file node))
-             (org-tags (org-roam-node-tags node))
-             (org-filetags (org-roam-node-tags node)) ; Filetags doesn't work so I'm just doin this
-             (all-tags (append org-tags org-filetags))
-             ;; Convert to Obsidian-style tags (#tag)
-             (obsidian-tags (mapcar (lambda (tag) (format "#%s" tag)) all-tags))
-             (tags-string (string-join obsidian-tags " ")))
+    ;; Give feedback to user
+    (message "Node is now %s a stub" (if is-stub "no longer" "marked as"))))
 
-        ;; Only operate on files that actually exist
-        (when (and org-file (file-exists-p org-file))
-          (with-current-buffer (find-file-noselect org-file)
-            (save-excursion
-              (goto-char (point-min))
-              ;; Check if "File Data" heading already exists in the buffer.
-              (let ((file-data-heading-pos
-                     (org-find-exact-headline-in-buffer "File Data")))
-                (if file-data-heading-pos
-                    (goto-char file-data-heading-pos)  ; jump there if found
-                  (org-insert-heading)                 ; else create new heading
-                  (insert "File Data\n")))
+;; Bind to leader key (works with evil, doom, spacemacs)
+(with-eval-after-load 'evil-leader
+  (evil-leader/set-key "mms" 'my/roamutils/org-roam-toggle-stub-status))
 
-              ;; Collect all Org-roam links in the file
-              (let (wikilinks)
-                (let ((parsed-org (org-element-parse-buffer)))
-                  (org-element-map parsed-org 'link
-                    (lambda (link)
-                      ;; Try to detect an Org-roam link:
-                      (when (my/org-roam-link-p link)
-                        (let* ((target-node (my/org-roam-resolve-link link))
-                               (target-title (and target-node
-                                                  (org-roam-node-title target-node))))
-                          (when target-title
-                            (push (format "[[%s]]" target-title) wikilinks)))))))
-                ;; Store them in a single property if any are found
-                (when wikilinks
-                  (org-set-property "Obsidian-Links"
-                                    (string-join (nreverse wikilinks) " "))))
-
-              ;; Store Obsidian-style tags if any
-              (when (and all-tags (not (string= tags-string "")))
-                (org-set-property "Obsidian-Tags" tags-string))
-
-              (save-buffer))
-            (kill-buffer))))))
-
-  (message "Finished Org-roam to Obsidian compatibility updates."))
-
-(defun my/org-roam-link-p (link)
-  "Return non-nil if LINK is recognized as an Org-roam link.
-This is a simple check for an 'id' link or a file link that Org-roam can handle.
-Adjust if your Org-roam version uses a different convention."
-  (let ((type (org-element-property :type link))
-        (path (org-element-property :path link)))
-    ;; If it's an 'id:' link, see if we can resolve a node from that ID.
-    (cond
-     ((string= type "id")
-      (org-roam-node-from-id path))  ;; returns nil if no node is found
-     ;; If you also want to catch 'file:' links that point to a roam note:
-     ;; ((string= type "file")
-     ;;  ...some check to see if it corresponds to a known Roam note...)
-     (t nil))))
-(defun my/org-roam-resolve-link (link)
-  "Resolve an Org-roam LINK to its corresponding node.
-Returns the Org-roam node if found, otherwise nil."
-  (let ((type (org-element-property :type link))
-        (path (org-element-property :path link)))
-    (when (string= type "id")
-      (org-roam-node-from-id path))))
+(global-set-key (kbd "C-c n s") 'my/roamutils/org-roam-toggle-stub-status)
 
 (use-package! flycheck
   :ensure t
@@ -1157,14 +1043,24 @@ Returns the Org-roam node if found, otherwise nil."
 
 (setq yas-triggers-in-field t)
 
+(after! yasnippet
+  (setq yas-triggers-in-field t)  ; Allow nested triggers
+
+  ;; Make sure YASnippet is properly initialized
+  (yas-global-mode 1)
+
+  ;; Add org-mode and markdown-mode to the snippet directories
+  (add-hook 'org-mode-hook #'yas-minor-mode)
+  (add-hook 'markdown-mode-hook #'yas-minor-mode)
+
+
+;; Add keybindings for YASnippet expansion
+(map! :i "TAB" #'yas-expand-from-trigger-key
+      :after yas
+      :map yas-minor-mode-map
+      :i [tab] nil
+      :i "TAB" nil
+      :i [backtab] #'yas-expand))
+
 (use-package! aas
   :commands aas-mode)
-
-;; accept completion from copilot and fallback to company
-(use-package! copilot
-  :hook (prog-mode . copilot-mode)
-  :bind (:map copilot-completion-map
-              ("<tab>" . 'copilot-accept-completion)
-              ("TAB" . 'copilot-accept-completion)
-              ("C-TAB" . 'copilot-accept-completion-by-word)
-              ("C-<tab>" . 'copilot-accept-completion-by-word))):w

@@ -3,33 +3,21 @@
 #+EXPORT_FILE_NAME: ~/org/exported/config
 #+options: coverpage yes
 #+latex_class: chameleon
-
-!!!! IMPORTANT !!!
-#+begin_src emacs-lisp
-;; (setq debug-on-error t)
-;; (setq debug-on-interrupt t)
-;; (setq debug-init t)
-#+end_src
-
-#+RESULTS:
-
-* TODO Emacs config
-
-
-
-[[https://tecosaur.github.io/emacs-config/config.html][Doom Emacs Configuration]]
-
-another helpful config I found recently:
-[[https://hieuphay.com/doom-emacs-config/][another one]]
-
-* Server style
+* TODO Look into these
+https://wohanley.com/posts/org-setup/
+https://michaelneuper.com/posts/how-i-use-org-roam-to-takes-notes-for-cs/
+https://lgmoneda.github.io/2023/04/08/semantic-search-for-org-roam.html
+https://cmdln.org/2023/03/25/how-i-org-in-2023/
+* Emacs config
 #+begin_src emacs-lisp
 (add-hook 'doom-first-frame-hook
           (lambda ()
             (unless (daemonp) ; Check if Emacs is already a daemon (server)
               (server-start)))) ; Start the Emacs server if not already running
-#+end_src
+(custom-set-variables
+ '(display-battery-mode 1))
 
+#+end_src
 
 ** Leftover block from the original config.el file, has some helpful reminders so I'll keep it
 #+BEGIN_SRC emacs-lisp
@@ -67,9 +55,8 @@ another helpful config I found recently:
 ;; they are implemented.
 #+END_SRC
 
-#+RESULTS:
+#+
 * Config Boilerplate
-** Telling Emacs who I am (they are in my skin)
 #+BEGIN_SRC emacs-lisp
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets. It is optional.
@@ -77,90 +64,42 @@ another helpful config I found recently:
        user-mail-address "ltwirth@asu.edu")
 
 
-;; If you use `org' and don't want your org files in the default location below,
-;; change `org-directory'. It must be set before org loads!
 ;; (setq org-directory "~/org/")
 (setq org-directory (file-truename "~/org/")) ;; File truename allows for symbolic link resolution
-(setq org-roam-directory (file-truename "~/org/roam/"))
-(md-roam-mode 1)
-(setq md-roam-file-extension "md")
+(setq org-roam-directory (file-truename "~/org/roam/")) ; I like roaming
 ;; I've been on-and off trying to use the org agenda, and i like the ideas of org-roam-daily as a way to quickly make/maintain daily notes.
-;; I thought to myself "why not try to combine the two?"
-(setq org-agenda-files '("~/org/roam/daily/" "~/org/"))
+;; I thought to myself "why not try to combine the two?" (this isn't working, but daily notes are working for me)
+(setq org-agenda-files '("~/org/roam/daily" "~/.config/doom/" "~/org/roam/agenda" ))
 #+END_SRC
 
-#+RESULTS:
 
-
-*** Epic Sauce Defaults
+*** Sane-Ish Defaults (to me)
 #+begin_src emacs-lisp
 (setq undo-limit 80000000                         ; Raise undo-limit to 80Mb
       evil-want-fine-undo t                       ; By default while in insert all changes are one big blob. Be more granular
-      auto-save-default t                         ; Nobody likes to loose work, I certainly don't
-      truncate-string-ellipsis "…"                ; Unicode ellispis are nicer than "...", and also save /precious/ space
-      password-cache-expiry nil                   ; I can trust my computers ... can't I?
+      auto-save-default t                         ; Nobody likes to lose work, I certainly don't, but vim mode makes me :w on every <esc> so it's not too bad
+      truncate-string-ellipsis "…"
+      password-cache-expiry nil
       scroll-preserve-screen-position 'always     ; Don't have `point' jump around
       scroll-margin 2                             ; It's nice to maintain a little margin
       display-time-default-load-average nil       ; I don't think I've ever found this useful
       display-line-numbers-type 'relative         ; RelNum ON TOP
+      evil-vsplit-window-right t
+      evil-split-window-below t
       )
-
 
 (display-time-mode 1)                             ; Enable time in the mode-line
 (global-subword-mode 1)                           ; Iterate through CamelCase words
+(blink-cursor-mode -1)
+(column-number-mode t)
+(transient-mark-mode t)
 (pixel-scroll-precision-mode t)                   ; Turn on pixel scrolling
 
-
-
-(setq-default
- delete-by-moving-to-trash t                      ; Delete files to trash
- window-combination-resize t                      ; take new window space from all other windows (not just current)
- x-stretch-cursor t                               ; Stretch cursor to the glyph width
- show-paren-mode 1                                ; Highlight Matching Parenthesis
- abbrev-mode t                                    ; erm..
-)
-#+end_src
-
-#+RESULTS:
-: t
-Its stupid to me that doom wont start in fullscreen by default
-#+begin_src emacs-lisp
-(add-to-list 'default-frame-alist '(width . 92))
-(add-to-list 'default-frame-alist '(height . 40))
-#+end_src
-
-#+RESULTS:
-: ((buffer-predicate . doom-buffer-frame-predicate) (right-divider-width . 1) (bottom-divider-width . 1) (font . JetBrains Mono-15) (height . 40) (width . 92) (vertical-scroll-bars) (tool-bar-lines . 0) (menu-bar-lines . 0) (left-fringe . 8) (right-fringe . 8))
-
-if you for some unholy reason want to split the window to the left, or above when there's only one window open,
-you're a psychopath here, I am setting things up to NOT do that
-#+begin_src emacs-lisp
-(setq evil-vsplit-window-right t
-      evil-split-window-below t
-      ;; evil-split-window-left f
-      ;; evil-split-window-above f
-        )
 #+end_src
 
 #+RESULTS:
 : t
 
-
-*** Frame title, sets a bit neater/nicer
-#+begin_src emacs-lisp :results none :tangle no
-;; (setq frame-title-format
-;;       '(""
-;;         (:eval
-;;          (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-;;              (replace-regexp-in-string
-;;               ".*/[0-9]*-?" "☰ "
-;;               (subst-char-in-string ?_ ?  buffer-file-name))
-;;            "%b"))
-;;         (:eval
-;;          (let ((project-name (projectile-project-name)))
-;;            (unless (string= "-" project-name)
-;;              (format (if (buffer-modified-p)  " ◉ %s" "  ●  %s") project-name))))))
-#+end_src
 
 
 *** Setting up the custom-file (to be used sparingly)
@@ -170,22 +109,7 @@ you're a psychopath here, I am setting things up to NOT do that
   (load custom-file))
 #+end_src
 
-#+RESULTS:
-: t
-
-
-**** Prompting for which buffer to open
-just a nice little QOL thing
-#+begin_src emacs-lisp :tangle no
-;; (defadvice! prompt-for-buffer (&rest _)
-;;   :after '(evil-window-split evil-window-vsplit)
-;;   (consult-buffer))
-#+end_src
-
-#+RESULTS:
-
-*** Window Rotation
-good ol keybinds and such
+*** Window Rotation/Navigation
 #+begin_src emacs-lisp
 (map! :map evil-window-map
       "SPC" #'rotate-layout
@@ -200,32 +124,10 @@ good ol keybinds and such
       "C-<up>"         #'+evil/window-move-up
       "C-<right>"      #'+evil/window-move-right)
 
-(setq evil-vsplit-window-right t
-      evil-split-window-below t)
 (defadvice! prompt-for-buffer (&rest _)
   :after '(evil-window-split evil-window-vsplit)
   (consult-buffer))
 #+end_src
-
-#+RESULTS:
-
-** Hippie Expand stuff
-#+begin_src emacs-lisp :tangle no
-;; (global-set-key [remap dabbrev-expand] #'hippie-expand)
-;; (setq hippie-expand-try-functions-list
-;;       '(try-complete-file-name-partially
-;;         try-complete-file-name
-;;         try-expand-all-abbrevs
-;;         try-expand-list
-;;         try-expand-dabbrev
-;;         try-expand-dabbrev-all-buffers
-;;         try-expand-dabbrev-from-kill
-;;         try-expand-line
-;;         try-complete-lisp-symbol-partially
-;;         try-complete-lisp-symbol))
-#+end_src
-
-#+RESULTS:
 
 * Looks
 I intend to configure the overal look and feel of my emacs configuration here, as well as any packages/modules that would affect how it looks and feels
@@ -258,36 +160,17 @@ To See stuff responsible for org mode look and feel, see:
 ;; Your font must have an italic face available.
 (set-face-attribute 'font-lock-comment-face nil
                     :slant 'italic)
-;;(set-face-attribute 'font-lock-keyword-face nil
-;; :slant 'italic)
-(set-face-attribute 'doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
-(set-face-attribute 'doom-symbol-font (font-spec :family "JuliaMono"))
+(setq doom-symbol-font (font-spec :family "JuliaMono" :size 22 :weight 'light))
+(setq doom-serif-font (font-spec :family "IBM Plex Mono" :size 22 :weight 'light))
 (add-to-list 'default-frame-alist '(font . "JetBrains Mono-18"))
 
 (setq-default line-spacing 0.05)
 #+end_src
 
-#+RESULTS:
-: 0.05
-
-#+RESULTS:
-| [\(?:\*?[=+>]\) 0 font-shape-gstring] |
-
-** Theme!
 #+begin_src emacs-lisp
 (setq doom-theme 'doom-gruvbox
       doom-themes-treemacs-enable-variable-pitch nil)
 #+end_src
-
-** +Action+! Variables relevant to look and feel!
-#+begin_src emacs-lisp
-(blink-cursor-mode -1)
-(column-number-mode t)
-(transient-mark-mode t)
-#+end_src
-#+RESULTS:
-: t
-
 ** Doom Modeline
 #+begin_src emacs-lisp
 (after! doom-modeline
@@ -323,7 +206,6 @@ To See stuff responsible for org mode look and feel, see:
 
 * Configuring Plugins (Misc)
 ** WakaTime
-*** WakaTime
 #+begin_src emacs-lisp
 (use-package wakatime-mode
   :ensure t)
@@ -331,9 +213,6 @@ To See stuff responsible for org mode look and feel, see:
 #+begin_src emacs-lisp
 (global-wakatime-mode t)
 #+end_src
-
-#+RESULTS:
-: t
 
 ** Which-Key
 it's like the one from neovim? (or is it the other way around?)
@@ -349,55 +228,21 @@ it's like the one from neovim? (or is it the other way around?)
    ))
 (setq which-key-allow-multiple-replacements t)
 #+end_src
-#+RESULTS:
-: t
-
-
-** Treemacs
+** copilot (fuck)
 #+begin_src emacs-lisp
-(map! :leader
-      (:prefix ("e" . "explorer")
-       :desc "Toggle Treemacs" "t" #'treemacs))
+;; accept completion from copilot and fallback to company
+(use-package! copilot
+  :hook (prog-mode . copilot-mode)
+  :bind (:map copilot-completion-map
+              ("<tab>" . 'copilot-accept-completion)
+              ("TAB" . 'copilot-accept-completion)
+              ("C-TAB" . 'copilot-accept-completion-by-word)
+              ("C-<tab>" . 'copilot-accept-completion-by-word))):w
 #+end_src
 
-#+RESULTS:
-: treemacs
 
 * Org
-
-** ORG-ROam Markdown Support (I'm still not sure if I wanna just use obsidian or this, so this is helpful)
-#+begin_src emacs-lisp
-(use-package! md-roam
-  :load-path "packages/md-roam" ; Assuming you install md-roam in ~/.doom.d/packages/md-roam/ (adjust if needed)
-  :config
-  (md-roam-mode 1)
-  (setq md-roam-file-extension "md")) ; Optional, defaults to "md"
-#+end_src
-
-#+RESULTS:
-: t
-
-*** They also support adding a capture template
-#+begin_src emacs-lisp
-(after! org-roam
-  (add-to-list 'org-roam-capture-templates
-               '("m" "Markdown" plain ""
-                 :target (file+head "%<%Y-%m-%dT%H%M%S>.md"
-                                   "---\ntitle: ${title}\nid: %<%Y-%m-%dT%H%M%S>\ncategory: \n---\n")
-                 :unnarrowed t)))
-#+end_src
-
-
-#+RESULTS:
-#+begin_src emacs-lisp
-        (defun my/generate-roam-id ()
-          (format-time-string "%Y%m%d%H%M%S"))
-#+end_src
-
-#+RESULTS:
-: my/generate-roam-id
-
-** \Todo faces and the like
+** Todo faces and the like
 #+begin_src emacs-lisp
 ;; Custom todo states
 (setq org-todo-keywords
@@ -420,16 +265,11 @@ it's like the one from neovim? (or is it the other way around?)
           (todo "WAITING")
           (todo "SOMEDAY")))))
 #+end_src
-
-#+RESULTS:
-
 #+begin_src emacs-lisp
 ;; Setup Org agenda to by default exclude cancelled stuff
 (setq org-agenda-todo-ignore-states '("SOMEDAY" "CANCELLED"))
 
 #+end_src
-
-also add some keybinds for org-agenda
 #+begin_src emacs-lisp
 (setq org-agenda-custom-commands
       '(("S" "Special states"
@@ -446,9 +286,6 @@ also add some keybinds for org-agenda
                 ((org-agenda-todo-ignore-states '("SOMEDAY" "CANCELLED"))
                  (org-agenda-overriding-header "Active TODOs (excluding SOMEDAY and CANCELLED):"))))))))))
 #+end_src
-
-#+RESULTS:
-
 ** Org Modern
 the key to it looking *pretty*
 #+begin_src emacs-lisp
@@ -457,9 +294,9 @@ the key to it looking *pretty*
  :config
 (setq org-special-ctrl-a/e t)
 (setq org-insert-heading-respect-content t)
-  ;; appearance
+  ;; ------------------------------------- appearance ----------------------------------------------
   (setq org-modern-radio-target    '("❰" t "❱"))
-  (setq org-modern-internal-target '("↪ " t "")) ; TODO: make this not be an emoji, and instead a font lig
+  (setq org-modern-internal-target '("↪ " t ""))
   (setq org-modern-todo t)
   (setq org-modern-todo-faces
   '(("TODO" :inverse-video t :inherit org-todo)
@@ -515,16 +352,17 @@ the key to it looking *pretty*
   (custom-set-faces! '(org-modern-statistics :inherit org-checkbox-statistics-todo)))
 )
 #+end_src
-#+RESULTS:
-: t
-
 #+begin_src emacs-lisp :tangle yes
 (after! org (add-hook 'org-mode-hook #'org-modern-mode))
 #+end_src
+#+begin_src emacs-lisp
+(custom-set-faces
+ '(org-modern-block-name ((t (:inherit org-block-begin-line))))
+ '(org-modern-block-border ((t (:inherit org-block-end-line)))))
+#+end_src
 ** Look and Feel
 *** Custom Faces
-I know this gets ran/called
-Using medium weights and stuff for our headers, as well as making them larger
+below makes the outlines a bit bigger depending on their level
 #+begin_src emacs-lisp :tangle yes
 (after! org-mode
   (custom-set-faces!
@@ -570,9 +408,6 @@ Using medium weights and stuff for our headers, as well as making them larger
       )
     ))
 #+end_src
-
-#+RESULTS:
-
 *** Org-Ellipsis
 #+begin_src emacs-lisp
 (after! org
@@ -588,9 +423,6 @@ Using medium weights and stuff for our headers, as well as making them larger
         (?E . 'nerd-icons-blue))))
 
 #+end_src
-
-#+RESULTS:
-
 #+begin_src emacs-lisp
 (appendq! +ligatures-extra-symbols
           (list :list_property "∷"
@@ -607,10 +439,6 @@ Using medium weights and stuff for our headers, as well as making them larger
                 :priority_d    #("⬇" 0 1 (face nerd-icons-green))
                 :priority_e    #("❓" 0 1 (face nerd-icons-blue))))
 #+end_src
-
-#+RESULTS:
-
-
 ** Keybind
 #+begin_src emacs-lisp
 (map! :after org
@@ -624,8 +452,6 @@ Using medium weights and stuff for our headers, as well as making them larger
       :desc "Org-Mark-Ring Save" "gs" #'org-mark-ring-push)
 #+end_src
 
-#+RESULTS:
-
 *** A silly little keybind idea
 open up a custom little swag baby gangster type thing whenever I hit a keybind while in a src block to enter a temp buffer
 #+begin_src emacs-lisp
@@ -635,11 +461,6 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
 (org-edit-src-code)
 )
 #+end_src
-
-#+RESULTS:
-: open-temp-buffer-src
-
-
 
 #+begin_src emacs-lisp
 (map! :after org
@@ -651,11 +472,8 @@ open up a custom little swag baby gangster type thing whenever I hit a keybind w
       :localleader
       :n "o" #'org-edit-src-code)
 #+end_src
-#+RESULTS:
-
 ** Babel
 *** Default Header Args
-TODO setup the completion thingy to be more friendly with these
 #+begin_src emacs-lisp :tangle yes
 (setq org-babel-default-header-args
       '((:session . "none")
@@ -668,9 +486,6 @@ TODO setup the completion thingy to be more friendly with these
         (:comments . "link")))
 
 #+END_SRC
-#+RESULTS:
-: ((:session . none) (:results . replace) (:exports . code) (:cache . no) (:noweb . no) (:hlines . yes) (:tangle . yes) (:comments . link))
-
 *** Load Languages:
 #+begin_src emacs-lisp
 (org-babel-do-load-languages
@@ -685,7 +500,7 @@ TODO setup the completion thingy to be more friendly with these
    '(cpp . t)))
 #+end_src
 
-#+RESULTS:
+#+
 
 #+begin_src emacs-lisp
 (require 'org)
@@ -693,7 +508,7 @@ TODO setup the completion thingy to be more friendly with these
 (require 'ob-C)
 #+end_src
 
-#+RESULTS:
+#+
 : ob-C
 
 ** Org-Latex
@@ -704,7 +519,7 @@ TODO setup the completion thingy to be more friendly with these
   (org-edit-latex-environment))
 #+end_src
 
-#+RESULTS:
+#+
 
 *** TODO Defining our font size for inline tex
 TODO: Make it bold/better matching to my regular written font weight
@@ -715,211 +530,7 @@ would be cool to have this be set dynamically based on how zoomed in the buffer 
 (after! org (plist-put org-format-latex-options :scale 3.0))
 #+end_src
 
-#+RESULTS:
-
-** TODO Org-Roam
-I would like to add a function that would make the default roam "template" have a few added things
-namely latex_class = chameleon
-and exported_file_name = ~/org/exported
-#+begin_src emacs-lisp
-(after! org
-  (setq org-roam-directory  "~/org/roam/")
-  (setq org-modern-mode t)
-  (setq org-roam-directory (file-truename "~/org/roam/"))
-  (setq org-roam-completion-everywhere t)
-  (setq org-roam-file-extensions '("org" "md"))
-  (require 'md-roam)
-  (md-roam-mode 1)
-  (org-roam-db-autosync-mode 1)
-)
-#+end_src
-
-#+RESULTS:
-: t
-** Org-Similarity
-#+begin_src emacs-lisp
-(use-package! org-similarity
- :after org  ; Ensure it loads after org-mode
- :commands (org-similarity-insert-list
-            org-similarity-sidebuffer
-            org-similarity-query) ; Autoload commands
- :config
- (setq org-similarity-directory org-roam-directory) ; Or org-directory if not using org-roam
-(setq org-similarity-file-extension-pattern "*.org\\|*.md") ;; Can look at markdown >:)
- (setq org-similarity-language "english") ; Or your preferred language
- (setq org-similarity-algorithm "tfidf") ; Or "bm25"
- (setq org-similarity-number-of-documents 10) ; Adjust as desired
- (setq org-similarity-min-chars 0) ; Adjust if needed
- (setq org-similarity-show-scores t) ; Set to t to see similarity scores initially
- (setq org-similarity-threshold 0.05) ; Adjust if needed
- (setq org-similarity-use-id-links t) ; Recommended for org-roam v2
- (setq org-similarity-recursive-search nil) ; Or t for recursive search
- (setq org-similarity-custom-python-interpreter nil) ; Let it manage venv
- (setq org-similarity-remove-first nil)
- (setq org-similarity-heading "** Related notes") ; Customize heading if you like
- (setq org-similarity-prefix "- ") ; Customize prefix if you like
- (setq org-similarity-ignore-frontmatter nil) ; Or t to ignore frontmatter
- )
-#+end_src
-
-**  org-roam timestamps
-
-#+begin_src emacs-lisp
-(use-package! org-roam-timestamps
-  :after org-roam
-  :config (org-roam-timestamps-mode))
-	(after! org-roam
-	(setq org-roam-timestamps-parent-file t)
-	(setq org-roam-timestamps-remember-timestamps t))
-#+end_src
-
-** Org-Capture from browser
-First need to make sure the protocol is on (it should be?)
-   #+begin_src emacs-lisp
-    (after! org
- (add-to-list 'org-roam-capture-templates
-            '(("w" "Web Capture" plain
-               "* [[%:link][%:title]] :web: :[[file:tags.org::*KEYWORDS][KEYWORDS]]\n  Captured on: %U\n  Source: %:link\n  \n  %input"
-               :unnarrowed t :jump-to-captured t))))
-    #+end_src
-    #+begin_src emacs-lisp :tangle yes
-(setq org-roam-capture-ref-templates
-  '(("r" "ref" plain "* %U\n
-%(zp/org-protocol-insert-selection-dwim \"%i\")%?"
-     :target (file+head "web/${slug}.org"
-                        "#+title: ${title}\n
-,#+roam_key: ${ref}\n
-,#+created: %u\n"  ;; <-- COMMA HERE
-                        )
-     :unnarrowed t)))
-
-
-    #+end_src
-
-    #+RESULTS:
-
-
-org roam does this thing where it prepends all the files with a ton of numbers and stuff, I think it's just timestamp data. Anyways, it'll be nice to have a function that can take that name and remove all those excess numbers and just get the rest of the string
-#+begin_src emacs-lisp
-(defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
-  :around #'doom-modeline-buffer-file-name ; takes no args
-  (if (s-contains-p org-roam-directory (or buffer-file-name ""))
-      (replace-regexp-in-string
-       "\\(?:^\\|.*/\\)\\([0-9]\\{4\\}\\)\\([0-9]\\{2\\}\\)\\([0-9]\\{2\\}\\)[0-9]*-"
-       "🢔(\\1-\\2-\\3) "
-       (subst-char-in-string ?_ ?  buffer-file-name))
-    (funcall orig-fun)))
-#+end_src
-
-#+RESULTS:
-
-** Org-Plot
-tecosaur has a nice thing that sets plot to use the same colors
-#+begin_src emacs-lisp
-(defvar +org-plot-term-size '(1050 . 650)
-  "The size of the GNUPlot terminal, in the form (WIDTH . HEIGHT).")
-
-(after! org-plot
-  (defun +org-plot-generate-theme (_type)
-    "Use the current Doom theme colours to generate a GnuPlot preamble."
-    (format "
-fgt = \"textcolor rgb '%s'\" # foreground text
-fgat = \"textcolor rgb '%s'\" # foreground alt text
-fgl = \"linecolor rgb '%s'\" # foreground line
-fgal = \"linecolor rgb '%s'\" # foreground alt line
-
-# foreground colors
-set border lc rgb '%s'
-# change text colors of  tics
-set xtics @fgt
-set ytics @fgt
-# change text colors of labels
-set title @fgt
-set xlabel @fgt
-set ylabel @fgt
-# change a text color of key
-set key @fgt
-
-# line styles
-set linetype 1 lw 2 lc rgb '%s' # red
-set linetype 2 lw 2 lc rgb '%s' # blue
-set linetype 3 lw 2 lc rgb '%s' # green
-set linetype 4 lw 2 lc rgb '%s' # magenta
-set linetype 5 lw 2 lc rgb '%s' # orange
-set linetype 6 lw 2 lc rgb '%s' # yellow
-set linetype 7 lw 2 lc rgb '%s' # teal
-set linetype 8 lw 2 lc rgb '%s' # violet
-
-# border styles
-set tics out nomirror
-set border 3
-
-# palette
-set palette maxcolors 8
-set palette defined ( 0 '%s',\
-1 '%s',\
-2 '%s',\
-3 '%s',\
-4 '%s',\
-5 '%s',\
-6 '%s',\
-7 '%s' )
-"
-            (doom-color 'fg)
-            (doom-color 'fg-alt)
-            (doom-color 'fg)
-            (doom-color 'fg-alt)
-            (doom-color 'fg)
-            ;; colours
-            (doom-color 'red)
-            (doom-color 'blue)
-            (doom-color 'green)
-            (doom-color 'magenta)
-            (doom-color 'orange)
-            (doom-color 'yellow)
-            (doom-color 'teal)
-            (doom-color 'violet)
-            ;; duplicated
-            (doom-color 'red)
-            (doom-color 'blue)
-            (doom-color 'green)
-            (doom-color 'magenta)
-            (doom-color 'orange)
-            (doom-color 'yellow)
-            (doom-color 'teal)
-            (doom-color 'violet)))
-
-  (defun +org-plot-gnuplot-term-properties (_type)
-    (format "background rgb '%s' size %s,%s"
-            (doom-color 'bg) (car +org-plot-term-size) (cdr +org-plot-term-size)))
-
-  (setq org-plot/gnuplot-script-preamble #'+org-plot-generate-theme)
-  (setq org-plot/gnuplot-term-extra #'+org-plot-gnuplot-term-properties))
-
-#+end_src
-
-#+RESULTS:
-
-** Org media note
-Seems interesting, might use, might not
-#+begin_src emacs-lisp
-(use-package! org-media-note
-  :hook (org-mode .  org-media-note-mode)
-  :bind (
-         ("H-v" . org-media-note-show-interface))  ;; Main entrance
-  :config
-  (setq org-media-note-screenshot-image-dir "~/Notes/imgs/")  ;; Folder to save screenshot
-  )
-#+end_src
-
-** Org-Cliplink
-#+begin_src emacs-lisp
-(after! org-cliplink
-(map! :leader
-      :desc "Org Cliplink"
-      "n l" #'org-cliplink)
-)
-#+end_src
+#+
 
 ** Exporting
 *** Org Export Backends:
@@ -957,9 +568,6 @@ yanked this from my .custom thing cause I want it to setup here
            "scrextend" nil)  ; Include scrextend package
           ("colorlinks=true,  citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil))))
 #+end_src
-
-#+RESULTS:
-: t
 
 #+name: configuring document classes
 #+begin_src elisp :tangle yes
@@ -1046,23 +654,19 @@ yanked this from my .custom thing cause I want it to setup here
 
 #+end_src
 
-#+RESULTS: configuring document classes
-: engraved
-
 #+begin_src emacs-lisp :tangle yes
 (use-package! ox-chameleon
   :after ox
   :config
   (setq! ox-chameleon-engrave-theme 'doom-gruvbox))
 #+end_src
-#+RESULTS:
+#+
 : t
 
 #+begin_src emacs-lisp :tangle yes
 (setq org-latex-pdf-process '("LANGUAGE=en_US.UTF-8 LC_ALL=en_US.UTF-8 latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f"))
 #+end_src
 
-#+RESULTS:
 
 ***** Functions?
 not sure how to categorize these, but all of the following is taken from the tecosaur emacs config
@@ -1084,7 +688,160 @@ not sure how to categorize these, but all of the following is taken from the tec
 
 #+end_src
 
+** PDF Tools setup/install
+#+begin_src emacs-lisp
+(use-package! pdf-tools
+  :magic ("%PDF" . pdf-view-mode)
+  :config
+  (pdf-tools-install)
+  (setq-default pdf-view-display-size 'fit-page))
+#+end_src
+
+   #+begin_src emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
+   #+end_src
+
+* Org-Roam
+I would like to add a function that would make the default roam "template" have a few added things
+namely latex_class = chameleon
+and exported_file_name = ~/org/exported
+#+begin_src emacs-lisp
+(after! org
+  ;; (setq org-roam-directory  "~/org/roam/")
+  (setq org-modern-mode t)
+  (setq org-roam-directory (file-truename "~/org/roam/"))
+  (setq org-roam-completion-everywhere t)
+  (setq org-roam-file-extensions '("org"))
+)
+
+(setq org-roam-mode-sections
+      (list #'org-roam-backlinks-section
+            #'org-roam-reflinks-section
+            #'org-roam-unlinked-references-section
+
+        ))
+#+end_src
+
 #+RESULTS:
+*** TODO fix this
+#+begin_src emacs-lisp :tangle yes
+(defun my/org-roam-toggle-unlinked-references ()
+        "Enable unlinked references in org-roam."
+        ;; need to update the org-roam-mode-sections list, if it contains "org-roam-unlinked-references-section" remove it, if not, add it
+        (if (member 'org-roam-unlinked-references-section org-roam-mode-sections)
+            (setq org-roam-mode-sections (remove 'org-roam-unlinked-references-section org-roam-mode-sections))
+          (add-to-list 'org-roam-mode-sections 'org-roam-unlinked-references-section))
+)
+#+end_src
+
+shoutout to this
+#+begin_src emacs-lisp
+(defun org-roam-repair-broken-links ()
+  "For all broken links referencing current note,
+   repair incoming links"
+  (interactive)
+
+  ;; we first determine if there exists any such broken references
+  (when-let* ((title (org-get-title))
+	      (query "select links.dest,
+                             links.source, links.pos
+
+                      from links where links.dest like $s1")
+	      (links (org-roam-db-query query (concat "%" title "%"))))
+
+    ;; for all such - go to those buffers and let org-roam's
+    ;; [[roam:*]] replace protocol take over - it would do this on save
+    ;; automatically
+  (save-excursion
+    (mapc (lambda (link)
+	    (let ((id (nth 1 link)))
+	      (+org-roam-id-goto id)
+	      (set-buffer-modified-p t)
+	      (save-buffer)))
+	  links))))
+
+(defun +org-roam-id-goto (id)
+  "Switch to the buffer containing the entry with id ID.
+Move the cursor to that entry in that buffer.
+Like `org-id-goto', but additionally uses the Org-roam database"
+  (interactive "sID: ")
+  (let ((m (org-roam-id-find id 'marker)))
+    (unless m
+      (error "Cannot find entry with ID \"%s\"" id))
+    (pop-to-buffer-same-window (marker-buffer m))
+    (goto-char m)
+    (move-marker m nil)
+    (org-fold-show-context)))
+#+end_src
+
+#+RESULTS:
+: +org-roam-id-goto
+
+
+Special face for links that dont exist yet:
+#+begin_src emacs-lisp
+(org-link-set-parameters "roam" :face '(:foreground "red"))
+(org-link-set-parameters "file" :face '(:foreground "blue"))
+(org-link-set-parameters "https" :face '(:foreground "green"))
+
+#+end_src
+
+#+RESULTS:
+
+** Org-Similarity
+#+begin_src emacs-lisp
+(use-package! org-similarity
+ :after org  ; Ensure it loads after org-mode
+ :commands (org-similarity-insert-list
+            org-similarity-sidebuffer
+            org-similarity-query) ; Autoload commands
+ :config
+ (setq org-similarity-directory org-roam-directory) ; Or org-directory if not using org-roam
+(setq org-similarity-file-extension-pattern "*.org\\|*.md") ;; Can look at markdown >:)
+ (setq org-similarity-language "english") ; Or your preferred language
+ (setq org-similarity-algorithm "tfidf") ; Or "bm25"
+ (setq org-similarity-number-of-documents 10) ; Adjust as desired
+ (setq org-similarity-min-chars 0) ; Adjust if needed
+ (setq org-similarity-show-scores t) ; Set to t to see similarity scores initially
+ (setq org-similarity-threshold 0.05) ; Adjust if needed
+ (setq org-similarity-use-id-links t) ; Recommended for org-roam v2
+ (setq org-similarity-recursive-search nil) ; Or t for recursive search
+ (setq org-similarity-custom-python-interpreter nil) ; Let it manage venv
+ (setq org-similarity-remove-first nil)
+ (setq org-similarity-heading "** Related notes") ; Customize heading if you like
+ (setq org-similarity-prefix "- ") ; Customize prefix if you like
+ (setq org-similarity-ignore-frontmatter nil) ; Or t to ignore frontmatter
+ )
+#+end_src
+** org-roam timestamps
+
+#+begin_src emacs-lisp
+(use-package! org-roam-timestamps
+  :after org-roam
+  :config (org-roam-timestamps-mode))
+	(after! org-roam
+	(setq org-roam-timestamps-parent-file t)
+	(setq org-roam-timestamps-remember-timestamps t))
+#+end_src
+
+#+begin_src emacs-lisp
+(defadvice! doom-modeline--buffer-file-name-roam-aware-a (orig-fun)
+  :around #'doom-modeline-buffer-file-name ; takes no args
+  (if (s-contains-p org-roam-directory (or buffer-file-name ""))
+      (replace-regexp-in-string
+       "\\(?:^\\|.*/\\)\\([0-9]\\{4\\}\\)\\([0-9]\\{2\\}\\)\\([0-9]\\{2\\}\\)[0-9]*-"
+       "🢔(\\1-\\2-\\3) "
+       (subst-char-in-string ?_ ?  buffer-file-name))
+    (funcall orig-fun)))
+#+end_src
+** Org-Cliplink
+#+begin_src emacs-lisp
+(after! org-cliplink
+(map! :leader
+      :desc "Org Cliplink"
+      "n l" #'org-cliplink)
+)
+#+end_src
 
 ** org-agenda and dailies
 *** define my daily template:
@@ -1125,12 +882,8 @@ not sure how to categorize these, but all of the following is taken from the tec
         (setq org-agenda-files (append org-agenda-files (list "~/org/roam/daily")))
 #+end_src
 
-#+RESULTS:
-| ~/org/roam/daily |
-
 *** Defining Some Custom Commands
 #+begin_src emacs-lisp
-; preface, I stole this straight from the internet, so I dunno even if this will work, and only have a loose Idea as to how it should work
 (defun my/org-roam-today-mk-agenda-link ()
   (interactive)
   (let* ((marker (or (org-get-at-bol 'org-marker)
@@ -1159,12 +912,8 @@ not sure how to categorize these, but all of the following is taken from the tec
       (buffer-string))))
 #+end_src
 
-#+RESULTS:
-: my/get-daily-agenda
-
 *** TODO Tell Org-Agenda About The Custom Commands
 #+begin_src emacs-lisp
-;; Customize the default Org agenda command to include Org Roam daily files
 (setq org-agenda-custom-commands
       '(("d" "Org Roam Daily Files"
          ((agenda "" ((org-agenda-files (list "~/org/roam/daily"))))
@@ -1172,277 +921,253 @@ not sure how to categorize these, but all of the following is taken from the tec
           (function my/get-daily-agenda)))))
 #+end_src
 
-#+RESULTS:
+#+
 
 #+begin_src emacs-lisp
-;; Add daily files to the default agenda files list
 (setq org-agenda-files (append org-agenda-files
                                (list "~/org/roam/daily")))
 #+end_src
 
 
-#+RESULTS:
+#+
 | ~/org/roam/daily |
 
-** PDF Tools setup/install
+** Org Supertag
+Mayhaps will help?
 #+begin_src emacs-lisp
-(use-package! pdf-tools
-  :magic ("%PDF" . pdf-view-mode)
+
+(use-package! org-supertag
+  :after org
   :config
-  (pdf-tools-install)
-  (setq-default pdf-view-display-size 'fit-page))
+  (require 'org-supertag)
+  (map! :leader
+        :prefix "o"
+        "s t" #'org-supertag-list-tags
+        "s r" #'org-supertag-show-tag-relations
+        "s p" #'org-supertag-list-tag-properties
+        "s c" #'org-supertag-compare-tags))
+(setq org-supertag-directory "~/org/roam")
+
 #+end_src
 
-   #+begin_src emacs-lisp
-(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
-   #+end_src
-** Org-Noter Setup/install
-  #+begin_src emacs-lisp
+#+RESULTS:
+: ~/org/roam
 
-(use-package! org-noter
-  :defer t
-  :commands (org-noter)
-  ;; Make sure it loads after org and pdf-view are available:
-  :after (org pdf-view)
-  :config
-  ;; Where to store the notes (Org) files if :NOTER_DOCUMENT: is missing:
-  (setq org-noter-notes-search-path '("~/org/roam/" "~/org/notes/"))
-
-  ;; By default, new notes buffer spawns below the PDF; change if you want:
-  (setq org-noter-notes-window-location 'right
-        org-noter-doc-split-fraction '(0.5 . 0.5)
-        org-noter-auto-save-last-location t)
-
-  ;; You can also unify it with org-roam, if desired:
-  (org-noter-enable-org-roam-integration)
-
-  (map! :map org-noter-doc-mode-map
-		:desc "Insert Note"
-		:n (kbd "C-i") #'org-noter-insert-note)
-	(map! :map org-noter-doc-mode-map
-		:n "M-i" #'org-noter-insert-precise-note
-		:desc "Insert Precise Note")
+** Keybinds
+#+begin_src emacs-lisp
+(after! org-roam
+        (map! :leader
+                (:prefix ("n r" . "org-roam")
+                :desc "Org Extract Subtree" "x" #'org-roam-extract-subtree))
+        (map! :leader
+                (:prefix ("mm" . "org-roam")
+                :desc "Org Extract Subtree" "x" #'org-roam-extract-subtree))
 )
-  #+end_src
+#+end_src
+
+#+RESULTS:
+: org-roam-extract-subtree
 
 
-*** More Org-Centric Custom Commands
+** OrgUtils
+My own scripts, still learning emacs lisp so LLMs are playing a decent part in writing these, I just make sure things look sane. I hate vibe coding though feels soulless despite "productivity"
+
 #+begin_src emacs-lisp
-(defun my/org-roam-filter-by-tag (tag-name)
-  (lambda (node)
-    (member tag-name (org-roam-node-tags node))))
-
-(defun my/org-roam-list-notes-by-tag (tag-name)
-  (mapcar #'org-roam-node-file
-          (seq-filter
-           (my/org-roam-filter-by-tag tag-name)
-           (org-roam-node-list))))
-
-(defun my/org-roam-refresh-agenda-list ()
+(defun my/roamutils/find-notes-with-file-links ()
+  "Find Org-roam notes containing 'file:' links to '.org' files, excluding the 'daily' directory."
   (interactive)
-  (setq org-agenda-files (my/org-roam-list-notes-by-tag "Project")))
+  (let* ((org-roam-directory (expand-file-name "~/org/roam")) ; Adjust this path as needed
+         (files (directory-files-recursively org-roam-directory "\\.org$"))
+         (filtered-files (seq-filter
+                          (lambda (file)
+                            (message "Checking file: %s" file) ; Print each file being checked
+                            (and (not (string-match-p "/daily/" file))
+                                 (with-temp-buffer
+                                   (insert-file-contents file)
+                                   (goto-char (point-min))
+                                   (re-search-forward "\\[\\[file:" nil t))))
+                          files)))
+    (if filtered-files
+        (let ((selected-file (completing-read "Select a note: " filtered-files nil t)))
+          (find-file selected-file))
+      (message "No notes with 'file:' links to '.org' files found."))))
+#+end_src
+#+begin_src emacs-lisp
+(defun my/roamutils/replace-roam-links-with-id-in-buffer ()
+  "Replace all roam: links in the current buffer with id: links if the target exists.
+Skips links with no matching node."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((modified nil))
+      ;; Search for [[roam:Some Title]]
+      (while (re-search-forward "\\[\\[roam:\\([^]]+\\)\\]\\(\\[.*?\\]\\)?\\]" nil t)
+        (let* ((title (match-string 1))
+               ;; Look up the node in org-roam by title or alias
+               (node (org-roam-node-from-title-or-alias title)))
+          (if node
+              (let* ((id (org-roam-node-id node))
+                     ;; If there was a description (optional link text), preserve it
+                     (description (or (match-string 2)
+                                      (concat "[" (org-roam-node-title node) "]"))))
+                ;; Replace the whole match with the id link
+                (replace-match (format "[[id:%s]]%s" id description))
+                (setq modified t))
+            (message "Skipping: No node found for title '%s'" title))))
+      modified)))
 
-;; Build the agenda list the first time for the session
-(my/org-roam-refresh-agenda-list)
+#+end_src
+#+begin_src emacs-lisp
+(defun my/roamutils/batch-replace-roam-links-in-all-files ()
+  "Process all org-roam files, replacing roam: links with id: links where possible.
+Asks for confirmation before starting, since it may take time."
+  (interactive)
+  (when (yes-or-no-p "This will scan and modify all Org-roam files. Continue? ")
+    (let ((files (org-roam-list-files))
+          (total-files 0)
+          (modified-files 0))
+      (message "Starting batch replace of roam: links with id: links...")
+      (dolist (file files)
+        (setq total-files (1+ total-files))
+        (with-current-buffer (find-file-noselect file)
+          (message "Processing file: %s" file)
+          (when (my/roamutils/replace-roam-links-with-id-in-buffer)
+            (message "Modified and saved: %s" file)
+            (setq modified-files (1+ modified-files))
+            (save-buffer))))
+      (message "Finished processing %d files. Modified %d files."
+               total-files modified-files))))
+
+#+end_src
+#+RESULTS:
+: my/roamutils/batch-replace-roam-links-in-all-files
+*** Gettin stubby
+missing obsidians phantom nodes like a mf right now...
+**** Creating the stub:
+#+begin_src emacs-lisp
+(defun my/roamutils/org-roam-create-and-link-stub ()
+  "Prompt for a title, create a stub note, and insert a link to it at point."
+  (interactive)
+  (let ((org-roam-capture-templates
+         '(("s" "stub" plain "%?"
+            :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n#+filetags: :stub:\n\n:PROPERTIES:\n:STATUS: stub\n:END:\n\n")
+            :immediate-finish t
+            :unnarrowed t))))
+
+    ;; Run the node insert command with our stub template
+    (org-roam-node-insert)))
+
+;; Bind it to a key
+(global-set-key (kbd "C-c n l") #'my/roamutils/org-roam-create-and-link-stub)
+#+end_src
+
+#+RESULTS:
+: my/roamutils/org-roam-create-and-link-stub
+
+**** todo Making it so that stub nodes have a different link color with org-link-parameters
+#+begin_src emacs-lisp
+;; Define the stub link face
+(defface my/org-link-stub-face
+  '((t (:inherit org-link :foreground "gray" :underline t)))
+  "Face for links to stub notes.")
+
+;; Function that determines the face for ID links
+(defun my/org-link-id-face (link)
+  "Return face for ID link based on whether it points to a stub."
+  (let* ((id (org-element-property :path link))
+         (node (org-roam-node-from-id id)))
+    (if (and node (member "stub" (org-roam-node-tags node)))
+        'my/org-link-stub-face
+      'org-link)))
+
+;; Apply our custom face function to id links
+(org-link-set-parameters "id" :face 'my/org-link-id-face)
+
+;; Force refresh the display to apply changes
+(defun my/refresh-stub-link-display ()
+  "Refresh the display of links to apply stub formatting."
+  (when (derived-mode-p 'org-mode)
+    (font-lock-flush)))
+
+;; Run this when loading files or creating links
+(add-hook 'org-mode-hook 'my/refresh-stub-link-display)
+(advice-add 'org-roam-node-insert :after 'my/refresh-stub-link-display)
 #+end_src
 
 #+RESULTS:
 
-**** Automatically move completed todos to dailies
+**** Toggling "stubbiness" of current file
 #+begin_src emacs-lisp
-(after! org
-(defun my/org-roam-create-daily-file-if-needed ()
-  "Create the daily file with the specified template if it doesn't exist."
-  (let* ((date-string (format-time-string "%Y-%m-%d"))
-         (file-name (concat date-string ".org"))
-         (file-path (expand-file-name file-name "~/org/roam/daily"))
-         (file-exists (file-exists-p file-path))
-         (template
-             (concat "#+title: %<%Y-%m-%d (%a)>\n"
-                           "#+startup: showall\n"
-                           "#+Filetags: :dailies:\n* daily overview\n"
-                           "#+export_file_name: ~/org/exported/dalies/"
-                           "\n#+begin_src emacs-lisp :results value raw\n"
-                           "(my/get-daily-agenda \"" (format-time-string "%Y-%m-%d") "\")\n"
-                           "#+end_src\n"
-                           "#+ Last Daily Entry: "
-                           "\n*  [/] do today\n* [/] maybe do today\n* journal\n* [/] Completed Tasks\n")))
-        (unless file-exists
-      (with-temp-buffer
-        (insert template)
-        (write-file file-path)))
-    file-path)))
-#+end_src
+(defun my/roamutils/org-roam-toggle-stub-status ()
+  "Toggle whether the current org-roam node is a stub."
+  (interactive)
+  (unless (org-roam-buffer-p)
+    (user-error "Not in an Org-roam file"))
 
-#+RESULTS:
-: my/org-roam-create-daily-file-if-needed
+  (let* ((node (org-roam-node-at-point))
+         (tags (org-roam-node-tags node))
+         (is-stub (member "stub" tags)))
 
-#+begin_src emacs-lisp
-(after! org
-  (defun my/org-roam-copy-heading-to-today ()
-    "Copy the heading of a completed TODO to today's daily file with state-specific formatting."
-    (interactive)
-    (let* ((today-file (my/org-roam-create-daily-file-if-needed))
-           (original-file (buffer-file-name))
-           (heading (save-excursion
-                     (org-back-to-heading t)
-                     (org-get-heading t t t t)))
-           (org-roam-id (org-roam-id-at-point))
-           (link-to-original (if org-roam-id
-                                (org-link-make-string (concat "id:" org-roam-id) heading)
-                              (org-link-make-string (concat "file:" (expand-file-name original-file) "::" heading) heading)))
-           (current-state (org-get-todo-state))
-           (status-prefix
-            (cond
-             ((string= current-state "DONE") "✓ DONE")
-             ((string= current-state "KILL") "✗ KILLED")
-             ((string= current-state "WAIT") "⏳ WAITING")
-             ((string= current-state "HOLD") "⏸️ HOLD")
-             ((string= current-state "PROJ") "📌 PROJECT")
-             ((string= current-state "LOOP") "🔄 LOOP")
-             ((string= current-state "STRT") "▶️ STARTED")
-             ((string= current-state "IDEA") "💡 IDEA")
-             ((string= current-state "OKAY") "👍 OKAY")
-             ((string= current-state "YES")  "✅ YES")
-             ((string= current-state "NO")   "❌ NO")
-             ((string= current-state "TODO") "📝 TODO")
-             (t current-state)))
-           (section-name
-            (cond
-             ((string= current-state "DONE") "* [/] Completed Tasks")
-             ((string= current-state "KILL") "* [/] Killed Tasks")
-             ((member current-state '("WAIT" "HOLD")) "* [/] Waiting/Held Tasks")
-             ((member current-state '("YES" "OKAY")) "* [/] Approved Tasks")
-             ((member current-state '("NO")) "* [/] Rejected Tasks")
-             (t "* [/] State Changes")))
-           (entry (format "** %s %s [%s]"
-                         status-prefix
-                         link-to-original
-                         (format-time-string "%Y-%m-%d %a %H:%M")))
-           (already-added nil))
-      ;; Check if the heading is already in the daily file
-      (with-current-buffer (find-file-noselect today-file)
-        (goto-char (point-min))
-        (while (re-search-forward (format "^** [^*]+ %s" (regexp-quote heading)) nil t)
-          (setq already-added t)))
-      ;; Only append if the heading is not already in the file
-      (unless already-added
-        (with-current-buffer (find-file-noselect today-file)
+    ;; Toggle filetags
+    (save-excursion
+      (goto-char (point-min))
+      (if (re-search-forward "^#\\+filetags:\\(.*\\)$" nil t)
+          (let* ((file-tags (match-string 1))
+                 (updated-tags (if is-stub
+                                   ;; Remove stub tag
+                                   (replace-regexp-in-string ":stub:" "" file-tags)
+                                 ;; Add stub tag
+                                 (if (string-match-p ":" file-tags)
+                                     (concat file-tags ":stub:")
+                                   (concat file-tags " :stub:")))))
+            (replace-match (concat "#+filetags:" updated-tags) t t))
+        ;; No filetags found, add them
+        (unless is-stub
           (goto-char (point-min))
-          ;; Ensure section heading exists
-          (unless (re-search-forward (regexp-quote section-name) nil t)
-            (goto-char (point-max))
-            (insert "\n" section-name))
-          (re-search-forward (regexp-quote section-name) nil t)
-          (outline-end-of-subtree)
-          (insert "\n" entry)
-          (save-buffer)))
-      (org-roam-db-sync)))
+          (forward-line)
+          (insert "#+filetags: :stub:\n"))))
 
-  (defun my/org-roam-handle-todo ()
-    "Handle TODO items by copying their heading to today's daily file when their state changes."
-    (interactive)
-    (let ((current-state (org-get-todo-state)))
-      (when (member current-state
-                    '("DONE" "KILL" "WAIT" "HOLD" "YES" "NO" "OKAY"))
-        (my/org-roam-copy-heading-to-today))))
-  (add-hook 'org-after-todo-state-change-hook #'my/org-roam-handle-todo))
+    ;; Toggle property status
+    (save-excursion
+      (goto-char (point-min))
+      (let ((found-prop nil))
+        ;; First check if properties drawer exists
+        (when (re-search-forward ":PROPERTIES:" nil t)
+          (let ((drawer-end (save-excursion
+                             (re-search-forward ":END:" nil t))))
+            (when drawer-end
+              ;; Check if STATUS property exists
+              (when (re-search-forward "^:STATUS:.*$" drawer-end t)
+                (setq found-prop t)
+                (replace-match (concat ":STATUS: " (if is-stub "" "stub")) t t))))
+          ;; If STATUS not found but drawer exists, add it
+          (unless found-prop
+            (unless is-stub  ; Only add if making it a stub
+              (end-of-line)
+              (insert "\n:STATUS: stub"))))
 
+        ;; If no properties drawer found and making it a stub, add it
+        (unless (or found-prop is-stub)
+          (goto-char (point-min))
+          (forward-line 2) ; After title and filetags
+          (insert ":PROPERTIES:\n:STATUS: stub\n:END:\n\n"))))
+
+    ;; Force buffer save and database update
+    (save-buffer)
+    (org-roam-db-sync)
+
+    ;; Give feedback to user
+    (message "Node is now %s a stub" (if is-stub "no longer" "marked as"))))
+
+;; Bind to leader key (works with evil, doom, spacemacs)
+(with-eval-after-load 'evil-leader
+  (evil-leader/set-key "mms" 'my/roamutils/org-roam-toggle-stub-status))
+
+(global-set-key (kbd "C-c n s") 'my/roamutils/org-roam-toggle-stub-status)
 #+end_src
 
 #+RESULTS:
-| my/org-roam-handle-todo |
-
-** Org-Roam-Obsidian Interop
-I'm split between using org roam and obsidian right now, and am not sure which I wanna use. I prefer org roam for the full functionality, but greatly appreceate obsidians' ease of use. I tend to bounce back and forwarth with using obsidian as note taking and then org for evertything else (like daily organization and stuff)
-
-ANyways I had an idea, what if I wrote a script that goes over my FULL roam directory, and for every link, inserts a duplicate link but inside the org-roam files drawer, so it's hidden, but we maintain connections within the database or something?
-might be neat
-#+begin_src emacs-lisp :tangle yes
-(defun my/org-roam-add-obsidian-compatibility ()
-  "Update each Org-roam note with Obsidian-compatible properties for links and tags."
-  (interactive)
-  ;; Ensure Org-roam is loaded, and its DB is up-to-date.
-  (require 'org-roam)
-  (org-roam-db-sync)
-
-  (message "Starting Org-roam to Obsidian compatibility updates...")
-
-  ;; Grab a list of all nodes using org-roam-node-list
-  (let ((nodes (org-roam-node-list)))
-    (dolist (node nodes)
-      (let* ((org-file (org-roam-node-file node))
-             (org-tags (org-roam-node-tags node))
-             (org-filetags (org-roam-node-tags node)) ; Filetags doesn't work so I'm just doin this
-             (all-tags (append org-tags org-filetags))
-             ;; Convert to Obsidian-style tags (#tag)
-             (obsidian-tags (mapcar (lambda (tag) (format "#%s" tag)) all-tags))
-             (tags-string (string-join obsidian-tags " ")))
-
-        ;; Only operate on files that actually exist
-        (when (and org-file (file-exists-p org-file))
-          (with-current-buffer (find-file-noselect org-file)
-            (save-excursion
-              (goto-char (point-min))
-              ;; Check if "File Data" heading already exists in the buffer.
-              (let ((file-data-heading-pos
-                     (org-find-exact-headline-in-buffer "File Data")))
-                (if file-data-heading-pos
-                    (goto-char file-data-heading-pos)  ; jump there if found
-                  (org-insert-heading)                 ; else create new heading
-                  (insert "File Data\n")))
-
-              ;; Collect all Org-roam links in the file
-              (let (wikilinks)
-                (let ((parsed-org (org-element-parse-buffer)))
-                  (org-element-map parsed-org 'link
-                    (lambda (link)
-                      ;; Try to detect an Org-roam link:
-                      (when (my/org-roam-link-p link)
-                        (let* ((target-node (my/org-roam-resolve-link link))
-                               (target-title (and target-node
-                                                  (org-roam-node-title target-node))))
-                          (when target-title
-                            (push (format "[[%s]]" target-title) wikilinks)))))))
-                ;; Store them in a single property if any are found
-                (when wikilinks
-                  (org-set-property "Obsidian-Links"
-                                    (string-join (nreverse wikilinks) " "))))
-
-              ;; Store Obsidian-style tags if any
-              (when (and all-tags (not (string= tags-string "")))
-                (org-set-property "Obsidian-Tags" tags-string))
-
-              (save-buffer))
-            (kill-buffer))))))
-
-  (message "Finished Org-roam to Obsidian compatibility updates."))
-
-(defun my/org-roam-link-p (link)
-  "Return non-nil if LINK is recognized as an Org-roam link.
-This is a simple check for an 'id' link or a file link that Org-roam can handle.
-Adjust if your Org-roam version uses a different convention."
-  (let ((type (org-element-property :type link))
-        (path (org-element-property :path link)))
-    ;; If it's an 'id:' link, see if we can resolve a node from that ID.
-    (cond
-     ((string= type "id")
-      (org-roam-node-from-id path))  ;; returns nil if no node is found
-     ;; If you also want to catch 'file:' links that point to a roam note:
-     ;; ((string= type "file")
-     ;;  ...some check to see if it corresponds to a known Roam note...)
-     (t nil))))
-(defun my/org-roam-resolve-link (link)
-  "Resolve an Org-roam LINK to its corresponding node.
-Returns the Org-roam node if found, otherwise nil."
-  (let ((type (org-element-property :type link))
-        (path (org-element-property :path link)))
-    (when (string= type "id")
-      (org-roam-node-from-id path))))
-
-#+end_src
-#+RESULTS:
-: my/org-roam-resolve-link
+: my/roamutils/org-roam-toggle-stub-status
 
 * Language Stuff
 doom emacs is super nice in having a lot of easy configuration found in the [[doomdir: init.el][init.el]] file, but for anything that doesn't come with doom, I likely have to add it to the [[doomdir:packages.el][packages.el]] file, and handle it here
@@ -1455,26 +1180,16 @@ either that, or just specify options for stuff that needs it
   :diminish
   :init (global-flycheck-mode))
 #+end_src
-
-#+RESULTS:
-
 ** LSP Stuff in particular
 *** File Templates:
 #+begin_src emacs-lisp
 (set-file-template! "\\.pro" :trigger "__" :mode 'prolog-mode)
 #+end_src
 
-#+RESULTS:
-
 *** Prolog
 #+begin_src emacs-lisp
 (add-to-list 'auto-mode-alist '("\\.pro\\'" . prolog-mode))
 #+end_src
-
-#+RESULTS:
-: ((\.pro\' . prolog-mode) (templates/.+\.php\' . web-mode) (wp-content/themes/.+/.+\.php\' . web-mode) (\.eco\' . web-mode) (\.jinja2?\' . web-mode) (\.twig\' . web-mode) (\.svelte\' . web-mode) (\.mustache\' . web-mode) (\.hbs\' . web-mode) (\.ejs\' . web-mode) (\.as[cp]x\' . web-mode) (\.jsp\' . web-mode) (\.[lh]?eex\' . web-mode) (\.erb\' . web-mode) (\.\(?:tpl\|blade\)\(?:\.php\)?\' . web-mode) (\.[px]?html?\' . web-mode) (/bspwmrc\' . sh-mode) (\.\(?:zunit\|env\)\' . sh-mode) (\.bats\' . sh-mode) (\.rs\' . rustic-mode) (\.rs\' . rust-mode) (/Pipfile\' . conf-mode) ([./]flake8\' . conf-mode) (/README\(?:\.md\)?\' . gfm-mode) (\.tsx\' . typescript-tsx-mode) (\.pac\' . rjsx-mode) (\.es6\' . rjsx-mode) (\.[mc]?js\' . rjsx-mode) (\.g\(?:radle\|roovy\)\' . groovy-mode) (\.Cask\' . emacs-lisp-mode) (\.rss\' . nxml-mode) (\.xs\(?:d\|lt\)\' . nxml-mode) (\.p\(?:list\|om\)\' . nxml-mode) (\.h\' . +cc-c-c++-objc-mode) (\.mm\' . objc-mode) (\.pdf\' . pdf-view-mode) (/\.doomrc\' . emacs-lisp-mode) (/\.doom\(?:project\|module\|profile\)?\' . lisp-data-mode) (/LICENSE\' . text-mode) (\.gv\' . graphviz-dot-mode) (\.dot\' . graphviz-dot-mode) (\.mips\' . mips-mode) (\.styl\' . stylus-mode) (\.sass\' . sass-mode) (\.slim\' . slim-mode) (\.\(?:jade\|pug\)\' . pug-mode) (\.haml\' . haml-mode) (requirements\.in . pip-requirements-mode) (requirements[^z-a]*\.txt\' . pip-requirements-mode) (\.pip\' . pip-requirements-mode) (\.gp\' . gnuplot-mode) (\.gnuplot\' . gnuplot-mode) (\.\(?:md\|markdown\|mkd\|mdown\|mkdn\|mdwn\)\' . markdown-mode) (\.lua\' . lua-mode) (\.hva\' . LaTeX-mode) (\.tsx?\' . typescript-mode) (\.jsx\' . rjsx-mode) (/Jenkinsfile\' . groovy-mode) (\.g\(?:ant\|roovy\|radle\)\' . groovy-mode) (\.hsc\' . haskell-mode) (\.l[gh]s\' . haskell-literate-mode) (\.hsig\' . haskell-mode) (\.[gh]s\' . haskell-mode) (\.cabal\'\|/cabal\.project\|/\.cabal/config\' . haskell-cabal-mode) (\.chs\' . haskell-c2hs-mode) (\.ghci\' . ghci-script-mode) (\.dump-simpl\' . ghc-core-mode) (\.hcr\' . ghc-core-mode) (go\.work\' . go-dot-work-mode) (go\.mod\' . go-dot-mod-mode) (\.go\' . go-mode) (\.tsv\' . tsv-mode) (\.[Cc][Ss][Vv]\' . csv-mode) (\.glsl\' . glsl-mode) (\.rmiss\' . glsl-mode) (\.rcall\' . glsl-mode) (\.rahit\' . glsl-mode) (\.rchit\' . glsl-mode) (\.rint\' . glsl-mode) (\.rgen\' . glsl-mode) (\.comp\' . glsl-mode) (\.task\' . glsl-mode) (\.mesh\' . glsl-mode) (\.tese\' . glsl-mode) (\.tesc\' . glsl-mode) (\.geom\' . glsl-mode) (\.frag\' . glsl-mode) (\.vert\' . glsl-mode) (\.opencl\' . opencl-c-mode) (\.clc\' . opencl-c-mode) (\.cl\' . opencl-c-mode) (\.cu[h]?\' . cuda-mode) (\.cmake\' . cmake-mode) (CMakeLists\.txt\' . cmake-mode) (/git-rebase-todo\' . git-rebase-mode) (/git/ignore\' . gitignore-mode) (/info/exclude\' . gitignore-mode) (/\.gitignore\' . gitignore-mode) (/etc/gitconfig\' . gitconfig-mode) (/\.gitmodules\' . gitconfig-mode) (/git/config\' . gitconfig-mode) (/modules/.*/config\' . gitconfig-mode) (/\.git/config\' . gitconfig-mode) (/\.gitconfig\' . gitconfig-mode) (/git/attributes\' . gitattributes-mode) (/info/attributes\' . gitattributes-mode) (/\.gitattributes\' . gitattributes-mode) (\.gpg\(~\|\.~[0-9]+~\)?\' nil epa-file) (\.elc\' . elisp-byte-code-mode) (\.zst\' nil jka-compr) (\.dz\' nil jka-compr) (\.xz\' nil jka-compr) (\.lzma\' nil jka-compr) (\.lz\' nil jka-compr) (\.g?z\' nil jka-compr) (\.bz2\' nil jka-compr) (\.Z\' nil jka-compr) (\.vr[hi]?\' . vera-mode) (\(?:\.\(?:rbw?\|ru\|rake\|thor\|jbuilder\|rabl\|gemspec\|podspec\)\|/\(?:Gem\|Rake\|Cap\|Thor\|Puppet\|Berks\|Brew\|Vagrant\|Guard\|Pod\)file\)\' . ruby-mode) (\.re?st\' . rst-mode) (\.py[iw]?\' . python-mode) (\.m\' . octave-maybe-mode) (\.less\' . less-css-mode) (\.scss\' . scss-mode) (\.cs\' . csharp-mode) (\.awk\' . awk-mode) (\.\(u?lpc\|pike\|pmod\(\.in\)?\)\' . pike-mode) (\.idl\' . idl-mode) (\.java\' . java-mode) (\.m\' . objc-mode) (\.ii\' . c++-mode) (\.i\' . c-mode) (\.lex\' . c-mode) (\.y\(acc\)?\' . c-mode) (\.h\' . c-or-c++-mode) (\.c\' . c-mode) (\.\(CC?\|HH?\)\' . c++-mode) (\.[ch]\(pp\|xx\|\+\+\)\' . c++-mode) (\.\(cc\|hh\)\' . c++-mode) (\.\(bat\|cmd\)\' . bat-mode) (\.[sx]?html?\(\.[a-zA-Z_]+\)?\' . mhtml-mode) (\.svgz?\' . image-mode) (\.svgz?\' . xml-mode) (\.x[bp]m\' . image-mode) (\.x[bp]m\' . c-mode) (\.p[bpgn]m\' . image-mode) (\.tiff?\' . image-mode) (\.gif\' . image-mode) (\.png\' . image-mode) (\.jpe?g\' . image-mode) (\.webp\' . image-mode) (\.te?xt\' . text-mode) (\.[tT]e[xX]\' . tex-mode) (\.ins\' . tex-mode) (\.ltx\' . latex-mode) (\.dtx\' . doctex-mode) (\.org\' . org-mode) (\.dir-locals\(?:-2\)?\.el\' . lisp-data-mode) (\.eld\' . lisp-data-mode) (eww-bookmarks\' . lisp-data-mode) (tramp\' . lisp-data-mode) (/archive-contents\' . lisp-data-mode) (places\' . lisp-data-mode) (\.emacs-places\' . lisp-data-mode) (\.el\' . emacs-lisp-mode) (Project\.ede\' . emacs-lisp-mode) (\.\(scm\|sls\|sld\|stk\|ss\|sch\)\' . scheme-mode) (\.l\' . lisp-mode) (\.li?sp\' . lisp-mode) (\.[fF]\' . fortran-mode) (\.for\' . fortran-mode) (\.p\' . pascal-mode) (\.pas\' . pascal-mode) (\.\(dpr\|DPR\)\' . delphi-mode) (\.\([pP]\([Llm]\|erl\|od\)\|al\)\' . perl-mode) (Imakefile\' . makefile-imake-mode) (Makeppfile\(?:\.mk\)?\' . makefile-makepp-mode) (\.makepp\' . makefile-makepp-mode) (\.mk\' . makefile-gmake-mode) (\.make\' . makefile-gmake-mode) ([Mm]akefile\' . makefile-gmake-mode) (\.am\' . makefile-automake-mode) (\.texinfo\' . texinfo-mode) (\.te?xi\' . texinfo-mode) (\.[sS]\' . asm-mode) (\.asm\' . asm-mode) (\.css\' . css-mode) (\.mixal\' . mixal-mode) (\.gcov\' . compilation-mode) (/\.[a-z0-9-]*gdbinit . gdb-script-mode) (-gdb\.gdb . gdb-script-mode) ([cC]hange\.?[lL]og?\' . change-log-mode) ([cC]hange[lL]og[-.][0-9]+\' . change-log-mode) (\$CHANGE_LOG\$\.TXT . change-log-mode) (\.scm\.[0-9]*\' . scheme-mode) (\.[ckz]?sh\'\|\.shar\'\|/\.z?profile\' . sh-mode) (\.bash\' . sh-mode) (/PKGBUILD\' . sh-mode) (\(/\|\`\)\.\(bash_\(profile\|history\|log\(in\|out\)\)\|z?log\(in\|out\)\)\' . sh-mode) (\(/\|\`\)\.\(shrc\|zshrc\|m?kshrc\|bashrc\|t?cshrc\|esrc\)\' . sh-mode) (\(/\|\`\)\.\([kz]shenv\|xinitrc\|startxrc\|xsession\)\' . sh-mode) (\.m?spec\' . sh-mode) (\.m[mes]\' . nroff-mode) (\.man\' . nroff-mode) (\.sty\' . latex-mode) (\.cl[so]\' . latex-mode) (\.bbl\' . latex-mode) (\.bib\' . bibtex-mode) (\.bst\' . bibtex-style-mode) (\.sql\' . sql-mode) (\(acinclude\|aclocal\|acsite\)\.m4\' . autoconf-mode) (\.m[4c]\' . m4-mode) (\.mf\' . metafont-mode) (\.mp\' . metapost-mode) (\.vhdl?\' . vhdl-mode) (\.article\' . text-mode) (\.letter\' . text-mode) (\.i?tcl\' . tcl-mode) (\.exp\' . tcl-mode) (\.itk\' . tcl-mode) (\.icn\' . icon-mode) (\.sim\' . simula-mode) (\.mss\' . scribe-mode) (\.f9[05]\' . f90-mode) (\.f0[38]\' . f90-mode) (\.indent\.pro\' . fundamental-mode) (\.\(pro\|PRO\)\' . idlwave-mode) (\.srt\' . srecode-template-mode) (\.prolog\' . prolog-mode) (\.tar\' . tar-mode) (\.\(arc\|zip\|lzh\|lha\|zoo\|[jew]ar\|xpi\|rar\|cbr\|7z\|squashfs\|ARC\|ZIP\|LZH\|LHA\|ZOO\|[JEW]AR\|XPI\|RAR\|CBR\|7Z\|SQUASHFS\)\' . archive-mode) (\.oxt\' . archive-mode) (\.\(deb\|[oi]pk\)\' . archive-mode) (\`/tmp/Re . text-mode) (/Message[0-9]*\' . text-mode) (\`/tmp/fol/ . text-mode) (\.oak\' . scheme-mode) (\.sgml?\' . sgml-mode) (\.x[ms]l\' . xml-mode) (\.dbk\' . xml-mode) (\.dtd\' . sgml-mode) (\.ds\(ss\)?l\' . dsssl-mode) (\.js[mx]?\' . javascript-mode) (\.har\' . javascript-mode) (\.json\' . js-json-mode) (\.[ds]?va?h?\' . verilog-mode) (\.by\' . bovine-grammar-mode) (\.wy\' . wisent-grammar-mode) (\.erts\' . erts-mode) ([:/\]\..*\(emacs\|gnus\|viper\)\' . emacs-lisp-mode) (\`\..*emacs\' . emacs-lisp-mode) ([:/]_emacs\' . emacs-lisp-mode) (/crontab\.X*[0-9]+\' . shell-script-mode) (\.ml\' . lisp-mode) (\.ld[si]?\' . ld-script-mode) (ld\.?script\' . ld-script-mode) (\.xs\' . c-mode) (\.x[abdsru]?[cnw]?\' . ld-script-mode) (\.zone\' . dns-mode) (\.soa\' . dns-mode) (\.asd\' . lisp-mode) (\.\(asn\|mib\|smi\)\' . snmp-mode) (\.\(as\|mi\|sm\)2\' . snmpv2-mode) (\.\(diffs?\|patch\|rej\)\' . diff-mode) (\.\(dif\|pat\)\' . diff-mode) (\.[eE]?[pP][sS]\' . ps-mode) (\.\(?:PDF\|EPUB\|CBZ\|FB2\|O?XPS\|DVI\|OD[FGPST]\|DOCX\|XLSX?\|PPTX?\|pdf\|epub\|cbz\|fb2\|o?xps\|djvu\|dvi\|od[fgpst]\|docx\|xlsx?\|pptx?\)\' . doc-view-mode-maybe) (configure\.\(ac\|in\)\' . autoconf-mode) (\.s\(v\|iv\|ieve\)\' . sieve-mode) (BROWSE\' . ebrowse-tree-mode) (\.ebrowse\' . ebrowse-tree-mode) (#\*mail\* . mail-mode) (\.g\' . antlr-mode) (\.mod\' . m2-mode) (\.ses\' . ses-mode) (\.docbook\' . sgml-mode) (\.com\' . dcl-mode) (/config\.\(?:bat\|log\)\' . fundamental-mode) (/\.\(authinfo\|netrc\)\' . authinfo-mode) (\.\(?:[iI][nN][iI]\|[lL][sS][tT]\|[rR][eE][gG]\|[sS][yY][sS]\)\' . conf-mode) (\.la\' . conf-unix-mode) (\.ppd\' . conf-ppd-mode) (java.+\.conf\' . conf-javaprop-mode) (\.properties\(?:\.[a-zA-Z0-9._-]+\)?\' . conf-javaprop-mode) (\.toml\' . conf-toml-mode) (\.desktop\' . conf-desktop-mode) (/\.redshift\.conf\' . conf-windows-mode) (\`/etc/\(?:DIR_COLORS\|ethers\|.?fstab\|.*hosts\|lesskey\|login\.?de\(?:fs\|vperm\)\|magic\|mtab\|pam\.d/.*\|permissions\(?:\.d/.+\)?\|protocols\|rpc\|services\)\' . conf-space-mode) (\`/etc/\(?:acpid?/.+\|aliases\(?:\.d/.+\)?\|default/.+\|group-?\|hosts\..+\|inittab\|ksysguarddrc\|opera6rc\|passwd-?\|shadow-?\|sysconfig/.+\)\' . conf-mode) ([cC]hange[lL]og[-.][-0-9a-z]+\' . change-log-mode) (/\.?\(?:gitconfig\|gnokiirc\|hgrc\|kde.*rc\|mime\.types\|wgetrc\)\' . conf-mode) (/\.mailmap\' . conf-unix-mode) (/\.\(?:asound\|enigma\|fetchmail\|gltron\|gtk\|hxplayer\|mairix\|mbsync\|msmtp\|net\|neverball\|nvidia-settings-\|offlineimap\|qt/.+\|realplayer\|reportbug\|rtorrent\.\|screen\|scummvm\|sversion\|sylpheed/.+\|xmp\)rc\' . conf-mode) (/\.\(?:gdbtkinit\|grip\|mpdconf\|notmuch-config\|orbital/.+txt\|rhosts\|tuxracer/options\)\' . conf-mode) (/\.?X\(?:default\|resource\|re\)s\> . conf-xdefaults-mode) (/X11.+app-defaults/\|\.ad\' . conf-xdefaults-mode) (/X11.+locale/.+/Compose\' . conf-colon-mode) (/X11.+locale/compose\.dir\' . conf-javaprop-mode) (\.~?[0-9]+\.[0-9][-.0-9]*~?\' nil t) (\.\(?:orig\|in\|[bB][aA][kK]\)\' nil t) ([/.]c\(?:on\)?f\(?:i?g\)?\(?:\.[a-zA-Z0-9._-]+\)?\' . conf-mode-maybe) (\.[1-9]\' . nroff-mode) (\.art\' . image-mode) (\.avs\' . image-mode) (\.bmp\' . image-mode) (\.cmyk\' . image-mode) (\.cmyka\' . image-mode) (\.crw\' . image-mode) (\.dcr\' . image-mode) (\.dcx\' . image-mode) (\.dng\' . image-mode) (\.dpx\' . image-mode) (\.fax\' . image-mode) (\.heic\' . image-mode) (\.hrz\' . image-mode) (\.icb\' . image-mode) (\.icc\' . image-mode) (\.icm\' . image-mode) (\.ico\' . image-mode) (\.icon\' . image-mode) (\.jbg\' . image-mode) (\.jbig\' . image-mode) (\.jng\' . image-mode) (\.jnx\' . image-mode) (\.miff\' . image-mode) (\.mng\' . image-mode) (\.mvg\' . image-mode) (\.otb\' . image-mode) (\.p7\' . image-mode) (\.pcx\' . image-mode) (\.pdb\' . image-mode) (\.pfa\' . image-mode) (\.pfb\' . image-mode) (\.picon\' . image-mode) (\.pict\' . image-mode) (\.rgb\' . image-mode) (\.rgba\' . image-mode) (\.tga\' . image-mode) (\.wbmp\' . image-mode) (\.webp\' . image-mode) (\.wmf\' . image-mode) (\.wpg\' . image-mode) (\.xcf\' . image-mode) (\.xmp\' . image-mode) (\.xwd\' . image-mode) (\.yuv\' . image-mode) (\.tgz\' . tar-mode) (\.tbz2?\' . tar-mode) (\.txz\' . tar-mode) (\.tzst\' . tar-mode) (\.drv\' . LaTeX-mode) (rc\' . conf-mode) (\.vue\' . web-mode))
-
-I've been using prolog for some classes, and am honestly enjoying using the language, it's growing on me for sure. What's nice is that Prolog is largely a GNU project, and so it's already included in base emacs with a prolog-mode. Just needs some configuring, and an lsp backend to make things real nice
 #+begin_src emacs-lisp
   (after! lsp-mode
     (lsp-register-client
@@ -1495,8 +1210,6 @@ I've been using prolog for some classes, and am honestly enjoying using the lang
 
 #+end_src
 
-#+RESULTS:
-
 **** Hooks and such
 #+begin_src emacs-lisp
 
@@ -1509,10 +1222,6 @@ I've been using prolog for some classes, and am honestly enjoying using the lang
     (prolog-mode)
     (lsp)))
 #+end_src
-
-#+RESULTS:
-: my-prolog-mode-setup
-
 ** TODO Lexic
 #+begin_src emacs-lisp
 (use-package! lexic
@@ -1537,8 +1246,6 @@ I've been using prolog for some classes, and am honestly enjoying using the lang
         :n "/" (cmd! (call-interactively #'lexic-search))))
 #+end_src
 
-#+RESULTS:
-
 #+begin_src emacs-lisp
 (defadvice! +lookup/dictionary-definition-lexic (identifier &optional arg)
   "Look up the definition of the word at point (or selection) using `lexic-search'."
@@ -1550,12 +1257,8 @@ I've been using prolog for some classes, and am honestly enjoying using the lang
   (lexic-search identifier nil nil t))
 #+end_src
 
-#+RESULTS:
-
-#+RESULTS:
 ** Spell-Checking
 *** Abbrev
-gangster swagger
 #+begin_src emacs-lisp
 (setq-default abbrev-mode t)
 
@@ -1563,8 +1266,6 @@ gangster swagger
 (setq abbrev-file-name abbrev-fn)
 #+end_src
 
-#+RESULTS:
-: /home/liam/.config/doom/misc/abbrev.el
 
 *** Jinx
 #+begin_src emacs-lisp
@@ -1589,7 +1290,6 @@ gangster swagger
         (advice-add 'jinx-next :after (lambda (_) (left-word))))
 #+end_src
 
-#+RESULTS:
 
 ** LaTeX
 #+begin_src emacs-lisp
@@ -1620,37 +1320,34 @@ gangster swagger
      (?B    "\\mathbb"        nil          t    nil  nil)
      (?a    "\\abs"           nil          t    nil  nil))))
 #+end_src
-#+RESULTS:
 ** TODO Snippets
-I use yasnippets like a good sheeple
 #+begin_src emacs-lisp
 (setq yas-triggers-in-field t)
 #+end_src
+#+begin_src emacs-lisp
+(after! yasnippet
+  (setq yas-triggers-in-field t)  ; Allow nested triggers
 
+  ;; Make sure YASnippet is properly initialized
+  (yas-global-mode 1)
+
+  ;; Add org-mode and markdown-mode to the snippet directories
+  (add-hook 'org-mode-hook #'yas-minor-mode)
+  (add-hook 'markdown-mode-hook #'yas-minor-mode)
+
+
+;; Add keybindings for YASnippet expansion
+(map! :i "TAB" #'yas-expand-from-trigger-key
+      :after yas
+      :map yas-minor-mode-map
+      :i [tab] nil
+      :i "TAB" nil
+      :i [backtab] #'yas-expand))
+#+end_src
 #+RESULTS:
-: t
 
-auto expanding snippets
+*** AAS (Might be broken)
 #+begin_src emacs-lisp
 (use-package! aas
   :commands aas-mode)
 #+end_src
-
-#+RESULTS:
-
-
-* copilot (fuck)
-#+begin_src emacs-lisp
-;; accept completion from copilot and fallback to company
-(use-package! copilot
-  :hook (prog-mode . copilot-mode)
-  :bind (:map copilot-completion-map
-              ("<tab>" . 'copilot-accept-completion)
-              ("TAB" . 'copilot-accept-completion)
-              ("C-TAB" . 'copilot-accept-completion-by-word)
-              ("C-<tab>" . 'copilot-accept-completion-by-word))):w
-#+end_src
-
-#+RESULTS:
-: :w
-
